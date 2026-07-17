@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="<%= lang || 'id' %>">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= t('customer.otp_title', 'Verifikasi OTP') %> | <%= settings.company_header || 'ISP Portal' %></title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#030712">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="/img/logo.png">
+  <link rel="icon" href="/img/logo.png">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap');
+
+    body {
+      background-color: #030712;
+      color: #f3f4f6;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+      position: relative;
+      overflow-x: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ── GLOWING BACKGROUND ORBS ── */
+    .glow-orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(120px);
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.35;
+      animation: pulseOrb 8s infinite alternate ease-in-out;
+    }
+
+    .orb-1 {
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, #6366f1 0%, rgba(99,102,241,0) 70%);
+      top: -10%;
+      left: -5%;
+    }
+
+    .orb-2 {
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, #06b6d4 0%, rgba(6,182,212,0) 70%);
+      bottom: -15%;
+      right: -10%;
+      animation-delay: 2s;
+    }
+
+    .orb-3 {
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, #ec4899 0%, rgba(236,72,153,0) 70%);
+      top: 40%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      opacity: 0.15;
+      animation-delay: 4s;
+    }
+
+    @keyframes pulseOrb {
+      0% { transform: scale(1) translate(0, 0); }
+      100% { transform: scale(1.15) translate(20px, -20px); }
+    }
+
+    .login-container {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 440px;
+      padding: 24px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .login-card {
+      background: rgba(10, 15, 30, 0.75);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 24px;
+      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.12);
+      overflow: hidden;
+      width: 100%;
+      padding: 40px 32px;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .login-card:hover {
+      box-shadow: 0 35px 70px rgba(0, 0, 0, 0.7), 0 0 30px rgba(99, 102, 241, 0.1);
+    }
+
+    .otp-icon {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, #6366f1, #06b6d4);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      color: #ffffff;
+      margin: 0 auto 24px;
+      box-shadow: 0 8px 24px rgba(99, 102, 241, 0.35), 0 0 15px rgba(6, 182, 212, 0.2);
+    }
+
+    .login-card h2 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 24px;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
+    }
+
+    .phone-text {
+      color: #9ca3af;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .phone-highlight {
+      color: #06b6d4;
+      font-weight: 700;
+    }
+
+    /* ── INPUT FIELDS ── */
+    .form-control {
+      background: rgba(5, 10, 20, 0.5) !important;
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+      color: #f3f4f6 !important;
+      border-radius: 14px;
+      padding: 14px 20px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .form-control:focus {
+      background: rgba(5, 10, 20, 0.75) !important;
+      border-color: #06b6d4 !important;
+      box-shadow: 0 0 20px rgba(6, 182, 212, 0.25), inset 0 1px 2px rgba(0, 0, 0, 0.4) !important;
+      color: #fff !important;
+    }
+
+    .otp-input {
+      letter-spacing: 12px;
+      font-size: 28px;
+      font-weight: 800;
+      text-align: center;
+      text-transform: uppercase;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+
+    .otp-input::placeholder {
+      letter-spacing: 12px;
+      color: rgba(156, 163, 175, 0.3);
+    }
+
+    /* ── BUTTON LOGIN ── */
+    .btn-login {
+      background: linear-gradient(135deg, #6366f1 0%, #06b6d4 100%);
+      border: none;
+      border-radius: 14px;
+      padding: 16px;
+      font-size: 15px;
+      font-weight: 700;
+      color: #ffffff;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 8px 20px rgba(99, 102, 241, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-login:hover {
+      background: linear-gradient(135deg, #4f46e5 0%, #0891b2 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(99, 102, 241, 0.4), 0 0 15px rgba(6, 182, 212, 0.25);
+    }
+
+    .btn-login:active {
+      transform: translateY(0);
+    }
+
+    .btn-back {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      color: #9ca3af;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .btn-back:hover {
+      color: #6366f1;
+      transform: translateX(-2px);
+    }
+
+    .alert {
+      border-radius: 14px;
+      border: 1px solid rgba(239, 68, 68, 0.15) !important;
+      background: rgba(239, 68, 68, 0.08) !important;
+      color: #fca5a5 !important;
+      font-size: 13px;
+    }
+
+    @media (max-width: 576px) {
+      .login-container {
+        padding: 12px;
+      }
+      .login-card {
+        border-radius: 20px;
+        padding: 32px 20px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Glowing Background Orbs -->
+  <div class="glow-orb orb-1"></div>
+  <div class="glow-orb orb-2"></div>
+  <div class="glow-orb orb-3"></div>
+
+  <div class="login-container">
+    <div class="login-card">
+      <div class="text-center mb-4">
+        <div class="otp-icon">
+          <i class="bi bi-shield-lock-fill"></i>
+        </div>
+        <h2><%= t('customer.otp_title', 'Verifikasi OTP') %></h2>
+        <p class="phone-text">
+          <%= t('customer.otp_sent_to', 'Kode verifikasi telah dikirim ke nomor WhatsApp Anda:') %>
+          <br>
+          <strong class="phone-highlight"><%= phone %></strong>
+        </p>
+      </div>
+
+      <% if (error) { %>
+        <div class="alert alert-danger border-0 text-center mb-4" role="alert">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>
+          <%= error %>
+        </div>
+      <% } %>
+
+      <form action="/customer/login-otp" method="POST">
+        <div class="mb-4">
+          <label for="otp" class="form-label text-secondary small text-uppercase fw-bold mb-2">
+            <%= t('customer.enter_otp', 'Masukkan 4 Digit Kode OTP') %>
+          </label>
+          <input type="text" class="form-control otp-input" id="otp" name="otp" maxlength="4"
+            pattern="\d{4}" required autocomplete="one-time-code" autofocus placeholder="0000">
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-login w-100 mb-4">
+          <i class="bi bi-check-circle-fill me-2"></i> <%= t('customer.verify_and_login', 'Verifikasi & Masuk') %>
+        </button>
+
+        <div class="text-center">
+          <a href="/customer/login" class="btn-back">
+            <i class="bi bi-arrow-left"></i> <%= t('customer.back_to_login', 'Kembali ke Login') %>
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js', { scope: '/customer/' }).catch(() => {});
+      });
+    }
+  </script>
+</body>
+
+</html>

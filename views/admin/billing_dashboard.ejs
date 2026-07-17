@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="<%= lang || 'id' %>">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title><%= t('admin.nav.billing_dashboard', 'Dashboard Tagihan') %> | <%= company %></title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/css/admin.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .filter-bar{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:18px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .resident-row td{transition: background-color 0.15s ease}
+    .resident-row:hover td{background: rgba(255,255,255,0.02) !important}
+    .risk-low{background:rgba(234,179,8,.15);color:#eab308;border:1px solid rgba(234,179,8,.3)}
+    .risk-medium{background:rgba(249,115,22,.15);color:#f97316;border:1px solid rgba(249,115,22,.3)}
+    .risk-high{background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3)}
+  </style>
+</head>
+<body>
+<%- include('partials/sidebar', { activePage: 'billing_dashboard', company }) %>
+<div class="mw">
+  <div class="topbar">
+    <div class="tb-title">
+      <button class="hb-menu" onclick="toggleSidebar()"><i class="bi bi-list"></i></button>
+      <i class="bi bi-pie-chart-fill"></i> <%= t('admin.nav.billing_dashboard', 'Dashboard Tagihan') %>
+    </div>
+    <div class="tb-right" style="display:flex;gap:8px;align-items:center">
+      <form method="GET" action="/admin/billing-dashboard" style="display:flex;gap:8px;align-items:center">
+        <select class="fs" name="year" style="width:100px" onchange="this.form.submit()">
+          <% for(let y=new Date().getFullYear(); y>=2023; y--){ %>
+          <option value="<%= y %>" <%= filterYear==y?'selected':'' %>><%= y %></option>
+          <% } %>
+        </select>
+      </form>
+      <a href="/admin/billing" class="btn btn-p btn-sm"><i class="bi bi-receipt"></i> <%= t('admin.billing.manage_title', 'Manajemen Tagihan') %></a>
+      <span class="adm-badge"><i class="bi bi-person-fill"></i> <%= (typeof session !== 'undefined' && session.isCashier) ? t('admin.role.cashier', 'Kasir') : t('admin.role.admin', 'Admin') %></span>
+      <a href="/admin/logout" class="btn btn-g btn-sm"><i class="bi bi-box-arrow-left"></i></a>
+    </div>
+  </div>
+
+  <div class="page">
+    <% if (msg) { %>
+    <div class="alert alert-<%= msg.type==='success'?'s':'d' %>">
+      <i class="bi bi-<%= msg.type==='success'?'check-circle':'exclamation-circle' %>"></i> <%= msg.text %>
+    </div>
+    <% } %>
+
+    <!-- Quick Stats Summary -->
+    <% 
+      let yearBilled = 0;
+      let yearCollected = 0;
+      let yearOutstanding = 0;
+      let totalBilledInvoices = 0;
+      let totalPaidInvoices = 0;
+
+      stats.monthly.forEach(m => {
+        yearBilled += Number(m.total_billed || 0);
+        yearCollected += Number(m.total_collected || 0);
+        yearOutstanding += Number(m.total_outstanding || 0);
+        totalBilledInvoices += Number(m.total_count || 0);
+        totalPaidInvoices += Number(m.paid_count || 0);
+      });
+
+      let yearCollectionRate = yearBilled > 0 ? Math.round((yearCollected / yearBilled) * 100) : 0;
+    %>
+    <div class="stat-grid" style="grid-template-columns:repeat(4,1fr)">
+      <div class="sc p">
+        <i class="bi bi-receipt sc-icon"></i>
+        <div class="sc-label">Total Tagihan Dibuat (<%= filterYear %>)</div>
+        <div class="sc-val">Rp <%= yearBilled.toLocaleString('id-ID') %></div>
+        <div class="sc-sub"><%= totalBilledInvoices %> Total Invoice</div>
+      </div>
+      <div class="sc s">
+        <i class="bi bi-cash-stack sc-icon"></i>
+        <div class="sc-label">Total Terkumpul (<%= filterYear %>)</div>
+        <div class="sc-val" style="color:var(--success)">Rp <%= yearCollected.toLocaleString('id-ID') %></div>
+        <div class="sc-sub"><%= totalPaidInvoices %> Terbayar</div>
+      </div>
+      <div class="sc d">
+        <i class="bi bi-hourglass-split sc-icon"></i>
+        <div class="sc-label">Piutang Outstanding (<%= filterYear %>)</div>
+        <div class="sc-val" style="color:var(--danger)">Rp <%= yearOutstanding.toLocaleString('id-ID') %></div>
+        <div class="sc-sub"><%= totalBilledInvoices - totalPaidInvoices %> Invoice Pending</div>
+      </div>
+      <div class="sc w">
+        <i class="bi bi-percent sc-icon"></i>
+        <div class="sc-label">Rasio Collection Rate</div>
+        <div class="sc-val"><%= yearCollectionRate %>%</div>
+        <div class="sc-sub">Rasio Pelunasan Tahun <%= filterYear %></div>
+      </div>
+    </div>
+
+    <!-- Monthly Payment & Collection Trends Chart -->
+    <div class="card" style="margin-top:20px">
+      <div class="card-hd">
+        <h6><i class="bi bi-bar-chart"></i> Grafik Perkembangan & Pelunasan Tagihan <%= filterYear %></h6>
+      </div>
+      <div class="card-bd">
+        <canvas id="collectionTrendChart" height="260" style="max-height:300px; width:100%"></canvas>
+      </div>
+    </div>
+
+    <!-- Outstanding Residents Block -->
+    <div class="card" style="margin-top:24px">
+      <div class="card-hd">
+        <div style="display:flex;align-items:center;justify-content:space-between;width:100%;flex-wrap:wrap;gap:12px">
+          <h6 style="margin:0"><i class="bi bi-people-fill"></i> Warga / Pelanggan dengan Tagihan Outstanding (<%= outstandingResidents.length %>)</h6>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <div class="sinput" style="max-width:220px">
+              <i class="bi bi-search"></i>
+              <input class="fc" id="outstandingSearch" placeholder="Cari nama warga..." onkeyup="filterResidents()">
+            </div>
+            <select class="fs" id="riskFilter" style="width:140px" onchange="filterResidents()">
+              <option value="all">Semua Risiko</option>
+              <option value="low">Risiko Rendah (1 Bln)</option>
+              <option value="medium">Risiko Sedang (2 Bln)</option>
+              <option value="high">Risiko Tinggi (3+ Bln)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="tbl-wrap">
+        <table class="dtbl" id="residentsTable">
+          <thead>
+            <tr>
+              <th style="width:40px">#</th>
+              <th>Warga / Pelanggan</th>
+              <th>Hubungi</th>
+              <th>Status Pelanggan</th>
+              <th>Bulan Menunggak</th>
+              <th class="num">Outstanding</th>
+              <th>Risiko</th>
+              <th style="width:160px; text-align:center">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+          <% if (outstandingResidents.length === 0) { %>
+            <tr><td colspan="8" class="text-center text-muted" style="padding:40px">Luar biasa! Tidak ada warga dengan tagihan menunggak saat ini.</td></tr>
+          <% } %>
+          <% outstandingResidents.forEach((res, index) => { 
+            let riskClass = 'risk-low';
+            let riskLabel = 'Rendah (1 Bln)';
+            if (res.unpaid_count === 2) {
+              riskClass = 'risk-medium';
+              riskLabel = 'Sedang (2 Bln)';
+            } else if (res.unpaid_count >= 3) {
+              riskClass = 'risk-high';
+              riskLabel = 'Tinggi (' + res.unpaid_count + ' Bln)';
+            }
+
+            let riskVal = 'low';
+            if (res.unpaid_count === 2) riskVal = 'medium';
+            else if (res.unpaid_count >= 3) riskVal = 'high';
+          %>
+            <tr class="resident-row" data-name="<%= res.name.toLowerCase() %>" data-risk="<%= riskVal %>">
+              <td class="text-muted"><%= index + 1 %></td>
+              <td>
+                <div class="fw6" style="font-size:14px"><%= res.name %></div>
+                <div style="font-size:11px;color:var(--muted)">ID Pelanggan: #<%= res.customer_id %></div>
+              </td>
+              <td>
+                <% if (res.phone) { %>
+                  <a href="https://wa.me/<%= res.phone.replace(/[^0-9]/g, '') %>" target="_blank" class="btn btn-g btn-sm" style="display:inline-flex;align-items:center;gap:6px;padding:4px 8px;font-size:12px;background:#25d366;color:white;border:none">
+                    <i class="bi bi-whatsapp"></i> <%= res.phone %>
+                  </a>
+                <% } else { %>
+                  <span class="text-muted small">-</span>
+                <% } %>
+              </td>
+              <td>
+                <% if (res.customer_status === 'active') { %>
+                  <span class="badge bs">Aktif</span>
+                <% } else if (res.customer_status === 'isolated') { %>
+                  <span class="badge bd">Terisolir</span>
+                <% } else { %>
+                  <span class="badge bm"><%= res.customer_status || 'Nonaktif' %></span>
+                <% } %>
+              </td>
+              <td>
+                <div class="fw6" style="font-size:13px"><%= res.unpaid_count %> Bulan</div>
+                <div style="font-size:11px;color:var(--muted);max-width:220px;overflow:hidden;text-overflow:ellipsis" title="<%= res.unpaid_periods %>">
+                  Periode: <%= res.unpaid_periods %>
+                </div>
+              </td>
+              <td class="num fw6" style="color:var(--danger)">
+                Rp <%= res.total_unpaid.toLocaleString('id-ID') %>
+              </td>
+              <td>
+                <span class="badge <%= riskClass %>" style="font-size:11px; font-weight:600"><%= riskLabel %></span>
+              </td>
+              <td style="text-align:center">
+                <button type="button" class="btn btn-s btn-sm pay-all-btn" 
+                        data-id="<%= res.customer_id %>"
+                        data-name="<%= res.name %>"
+                        data-amount="<%= res.total_unpaid %>"
+                        data-invoices="<%= res.invoice_ids %>"
+                        data-periods="<%= res.unpaid_periods %>">
+                  <i class="bi bi-check-lg"></i> Lunasi Semua
+                </button>
+              </td>
+            </tr>
+          <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Konfirmasi Lunasi Semua -->
+<div class="mo" id="payAllModal">
+  <div class="mb">
+    <div class="mh">
+      <span class="mt"><i class="bi bi-cash-coin"></i> Konfirmasi Lunasi Semua Tagihan</span>
+      <button class="mc" onclick="closeModal('payAllModal')">&times;</button>
+    </div>
+    <form method="POST" action="/admin/billing/pay-bulk" id="payAllForm">
+      <div class="mbody">
+        <div class="alert alert-i" style="margin-bottom:14px">
+          <i class="bi bi-info-circle"></i> Anda akan melunasi seluruh tagihan warga berikut secara massal.
+        </div>
+        
+        <div style="background: rgba(255,255,255,0.03); padding: 14px; border-radius: 8px; border: 1px solid var(--border); margin-bottom:16px">
+          <div style="font-size:12px;color:var(--muted)">Warga / Pelanggan:</div>
+          <div class="fw6" id="modalResidentName" style="font-size:16px;margin-bottom:8px"></div>
+          
+          <div style="font-size:12px;color:var(--muted)">Periode Tertunggak:</div>
+          <div class="fw6" id="modalResidentPeriods" style="font-size:13px;margin-bottom:8px"></div>
+          
+          <div style="font-size:12px;color:var(--muted)">Total Pelunasan:</div>
+          <div class="fw6" id="modalResidentAmount" style="font-size:18px;color:var(--success)"></div>
+        </div>
+
+        <!-- Hidden input containers for invoice ids -->
+        <div id="modalInvoiceIdsContainer"></div>
+
+        <% const payByDefault = (typeof session !== 'undefined' && session.isCashier)
+          ? (`Kasir ${(session.cashierName || '').trim()}` + ((session.cashierUsername || '').trim() ? ` (@${String(session.cashierUsername).trim()})` : '')).trim()
+          : 'Admin'; %>
+        
+        <div class="fg">
+          <label class="fl">Diterima Oleh</label>
+          <input class="fc" name="paid_by_name" value="<%= payByDefault || 'Admin' %>" required>
+        </div>
+        <div class="fg">
+          <label class="fl">Catatan Pembayaran (Opsional)</label>
+          <textarea class="fc" name="notes" placeholder="Contoh: Tunai, Transfer Mandiri, dll..."></textarea>
+        </div>
+      </div>
+      <div class="mf">
+        <button type="button" class="btn btn-g" onclick="closeModal('payAllModal')"><%= t('common.cancel', 'Batal') %></button>
+        <button type="submit" class="btn btn-s"><i class="bi bi-check-circle"></i> <%= t('admin.billing.confirm_paid', 'Konfirmasi Lunas') %></button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openModal(id){document.getElementById(id).classList.add('show')}
+function closeModal(id){document.getElementById(id).classList.remove('show')}
+document.querySelectorAll('.mo').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('show')}));
+
+// Handlers for Lunasi Semua Buttons
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('.pay-all-btn');
+  if (!btn) return;
+
+  const customerId = btn.dataset.id;
+  const name = btn.dataset.name;
+  const amount = Number(btn.dataset.amount || 0);
+  const invoiceIds = btn.dataset.invoices.split(',');
+  const periods = btn.dataset.periods;
+
+  document.getElementById('modalResidentName').textContent = name;
+  document.getElementById('modalResidentPeriods').textContent = periods;
+  document.getElementById('modalResidentAmount').textContent = 'Rp ' + amount.toLocaleString('id-ID');
+
+  // Fill hidden inputs
+  const container = document.getElementById('modalInvoiceIdsContainer');
+  container.innerHTML = '';
+  invoiceIds.forEach(id => {
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'invoice_ids';
+    input.value = id;
+    container.appendChild(input);
+  });
+
+  openModal('payAllModal');
+});
+
+// Dynamic Client Side Filter
+function filterResidents() {
+  const query = document.getElementById('outstandingSearch').value.toLowerCase().trim();
+  const risk = document.getElementById('riskFilter').value;
+  const rows = document.querySelectorAll('.resident-row');
+
+  rows.forEach(row => {
+    const name = row.getAttribute('data-name') || '';
+    const rowRisk = row.getAttribute('data-risk') || '';
+
+    const matchName = name.includes(query);
+    const matchRisk = (risk === 'all' || rowRisk === risk);
+
+    if (matchName && matchRisk) {
+      row.style.display = '';
+    } else {
+      row.style.display = 'none';
+    }
+  });
+}
+
+// Chart.js initialization
+const monthNames = <%= JSON.stringify((lang === 'en')
+  ? ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+  : ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des']) %>;
+
+const monthlyData = <%= JSON.stringify(stats.monthly) %>;
+const labels = monthNames;
+
+const billedData = Array(12).fill(0);
+const collectedData = Array(12).fill(0);
+const outstandingData = Array(12).fill(0);
+
+monthlyData.forEach(d => {
+  const idx = d.month - 1;
+  billedData[idx] = d.total_billed || 0;
+  collectedData[idx] = d.total_collected || 0;
+  outstandingData[idx] = d.total_outstanding || 0;
+});
+
+const ctx = document.getElementById('collectionTrendChart').getContext('2d');
+new Chart(ctx, {
+  type: 'bar',
+  data: {
+    labels: labels,
+    datasets: [
+      {
+        label: 'Sudah Terbayar (Lunas)',
+        data: collectedData,
+        backgroundColor: 'rgba(63, 185, 80, 0.65)',
+        borderColor: '#3fb950',
+        borderWidth: 1.5,
+        borderRadius: 4
+      },
+      {
+        label: 'Belum Terbayar (Outstanding)',
+        data: outstandingData,
+        backgroundColor: 'rgba(248, 81, 73, 0.65)',
+        borderColor: '#f85149',
+        borderWidth: 1.5,
+        borderRadius: 4
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        labels: {
+          color: '#7d8590',
+          font: { family: 'inherit', size: 12 }
+        }
+      },
+      tooltip: {
+        callbacks: {
+          label: function(context) {
+            return context.dataset.label + ': Rp ' + context.raw.toLocaleString('id-ID');
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        stacked: true,
+        ticks: { color: '#7d8590' },
+        grid: { color: 'rgba(240,246,252,0.05)' }
+      },
+      y: {
+        stacked: true,
+        ticks: { 
+          color: '#7d8590',
+          callback: function(value) {
+            if (value >= 1000000) {
+              return 'Rp ' + (value / 1000000).toFixed(1) + 'M';
+            } else if (value >= 1000) {
+              return 'Rp ' + (value / 1000).toFixed(0) + 'k';
+            }
+            return 'Rp ' + value;
+          }
+        },
+        grid: { color: 'rgba(240,246,252,0.05)' }
+      }
+    }
+  }
+});
+</script>
+</body>
+</html>

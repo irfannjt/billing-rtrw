@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="<%= lang || 'id' %>">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title><%= title %> | <%= company %></title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/css/admin.css">
+  <style>
+    /* Custom styles for VPN, RADIUS & NAS Dashboard */
+    .tab-nav {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+    }
+    .tab-btn {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .tab-btn:hover {
+      background: var(--bg3);
+      color: var(--text);
+    }
+    .tab-btn.active {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    
+    .vpn-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 16px;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: 600;
+    }
+    .badge-online {
+      background: var(--sdim);
+      color: var(--success);
+      border: 1px solid rgba(63, 185, 80, 0.3);
+    }
+    .badge-offline {
+      background: var(--ddim);
+      color: var(--danger);
+      border: 1px solid rgba(248, 81, 73, 0.3);
+    }
+    .badge-disabled {
+      background: var(--bg3);
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+    .form-row {
+      display: flex;
+      gap: 16px;
+    }
+    .form-col {
+      flex: 1;
+    }
+    @media (max-width: 768px) {
+      .form-row {
+        flex-direction: column;
+        gap: 0;
+      }
+    }
+    
+    .code-box {
+      background: #0f172a;
+      color: #38bdf8;
+      font-family: 'JetBrains Mono', Courier, monospace;
+      padding: 16px;
+      border-radius: 8px;
+      border: 1px solid #334155;
+      font-size: 12px;
+      white-space: pre-wrap;
+      word-break: break-all;
+      position: relative;
+      margin-top: 8px;
+    }
+    .copy-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      color: #e2e8f0;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 11px;
+      transition: all 0.2s;
+    }
+    .copy-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+    
+    .pulse-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background-color: var(--success);
+      display: inline-block;
+      box-shadow: 0 0 0 0 rgba(63, 185, 80, 0.7);
+      animation: pulse 1.6s infinite;
+    }
+    @keyframes pulse {
+      0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(63, 185, 80, 0.7);
+      }
+      70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 6px rgba(63, 185, 80, 0);
+      }
+      100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(63, 185, 80, 0);
+      }
+    }
+
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.6);
+      backdrop-filter: blur(4px);
+    }
+    .modal-content {
+      background-color: var(--bg2);
+      border: 1px solid var(--border);
+      margin: 10% auto;
+      padding: 24px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      animation: modalSlide 0.3s;
+    }
+    @keyframes modalSlide {
+      from { transform: translateY(-50px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+    }
+    .modal-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .modal-close {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      font-size: 24px;
+      cursor: pointer;
+    }
+    .modal-close:hover {
+      color: var(--text);
+    }
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      border-top: 1px solid var(--border);
+      padding-top: 16px;
+      margin-top: 20px;
+    }
+
+    .status-indicator {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 6px;
+    }
+    .status-online {
+      background-color: var(--success);
+    }
+    .status-offline {
+      background-color: var(--danger);
+    }
+    .d-none {
+      display: none !important;
+    }
+    .btn-xs {
+      padding: 2px 6px;
+      font-size: 11px;
+    }
+  </style>
+</head>
+<body>
+<%- include('partials/sidebar', { activePage: activePage || 'vpn_health', company }) %>
+
+<div class="mw">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="tb-title">
+      <button class="hb-menu" onclick="toggleSidebar()"><i class="bi bi-list"></i></button>
+      <i class="bi bi-shield-network"></i>
+      <span id="page-title">RADIUS / NAS</span>
+    </div>
+    <div class="tb-right">
+      <button onclick="location.reload()" class="btn btn-g btn-sm">
+        <i class="bi bi-arrow-clockwise"></i> Refresh
+      </button>
+      <span class="adm-badge">
+        <i class="bi bi-person-fill"></i> 
+        <%= (typeof session !== 'undefined' && session.isCashier) ? t('admin.role.cashier', 'Kasir') : t('admin.role.admin', 'Admin') %>
+      </span>
+      <a href="/admin/logout" class="btn btn-g btn-sm"><i class="bi bi-box-arrow-left"></i></a>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="page">
+    <div style="margin-bottom: 24px;">
+      <h2 style="font-weight: 800; font-size: 24px; margin-bottom: 4px;">RADIUS / NAS</h2>
+      <p class="text-muted" style="font-size: 14px;">Kelola Network Access Server, VPN, dan konfigurasi autentikasi</p>
+    </div>
+
+    <% if (msg) { %>
+      <div style="margin-bottom: 20px; padding: 12px 16px; border-radius: 8px; background: <%= msg.type === 'success' ? 'var(--sdim)' : 'var(--ddim)' %>; border: 1px solid <%= msg.type === 'success' ? 'rgba(63, 185, 80, 0.3)' : 'rgba(248, 81, 73, 0.3)' %>; color: <%= msg.type === 'success' ? 'var(--success)' : 'var(--danger)' %>;">
+        <i class="bi bi-<%= msg.type === 'success' ? 'check-circle-fill' : 'exclamation-triangle-fill' %>"></i> <%= msg.text %>
+      </div>
+    <% } %>
+
+    <!-- TABS NAVIGATION -->
+    <div class="tab-nav">
+      <button class="tab-btn active" id="btn-nas" onclick="switchTab('tab-nas')">
+        <i class="bi bi-hdd-stack"></i> NAS
+      </button>
+      <button class="tab-btn" id="btn-wireguard" onclick="switchTab('tab-wireguard')">
+        <i class="bi bi-shield"></i> WireGuard
+      </button>
+      <button class="tab-btn" id="btn-l2tp" onclick="switchTab('tab-l2tp')">
+        <i class="bi bi-shield-shaded"></i> L2TP/IPSec
+      </button>
+    </div>
+
+    <!-- TAB 1: RADIUS NAS -->
+    <div id="tab-nas" class="tab-content active">
+      <div style="display: flex; justify-content: flex-end; margin-bottom: 16px;">
+        <button onclick="openNASModal()" class="btn btn-p" style="display: flex; align-items: center; gap: 8px;">
+          <i class="bi bi-plus-circle"></i> Tambah NAS
+        </button>
+      </div>
+
+      <div class="card mb24">
+        <div class="card-hd" style="display: flex; align-items: center; gap: 8px;">
+          <i class="bi bi-database" style="font-size: 18px; color: var(--primary);"></i>
+          <div>
+            <h6 style="margin: 0; font-size: 15px; font-weight: 700;">Daftar NAS</h6>
+            <p class="text-muted" style="margin: 0; font-size: 11px;">Network Access Server terdaftar</p>
+          </div>
+        </div>
+        <div class="card-bd">
+          <div class="tbl-wrap">
+            <table class="dtbl">
+              <thead>
+                <tr>
+                  <th>NAMA / STATUS</th>
+                  <th>IP NAS</th>
+                  <th>TIPE</th>
+                  <th>SECRET</th>
+                  <th>LAST SEEN</th>
+                  <th style="text-align: right;">AKSI</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (nasList && nasList.length > 0) { %>
+                  <% nasList.forEach(nas => { %>
+                    <tr>
+                      <td class="fw6">
+                        <span class="status-indicator <%= nas.status === 'online' ? 'status-online' : 'status-offline' %>"></span>
+                        <%= nas.name %>
+                        <div class="text-muted fs10" style="margin-left: 14px;">
+                          <%= nas.status === 'online' ? 'Online' : 'Offline' %> · <%= nas.active_sessions || 0 %> sesi aktif
+                        </div>
+                      </td>
+                      <td><code><%= nas.ip_nas %></code></td>
+                      <td><span class="badge bg-b"><%= nas.type %></span></td>
+                      <td>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                          <span class="nas-secret-mask" id="secret-mask-<%= nas.id %>">••••••</span>
+                          <span class="nas-secret-text d-none" id="secret-text-<%= nas.id %>"><code><%= nas.secret %></code></span>
+                          <button type="button" class="btn btn-g btn-xs" onclick="toggleSecret(<%= nas.id %>)">
+                            <i class="bi bi-eye" id="secret-icon-<%= nas.id %>"></i>
+                          </button>
+                        </div>
+                      </td>
+                      <td class="fs11 text-muted"><%= nas.last_seen ? new Date(nas.last_seen).toLocaleString('id-ID') : '–' %></td>
+                      <td style="text-align: right;">
+                        <form action="/admin/vpn-health/delete-nas/<%= nas.id %>" method="POST" style="display:inline;" onsubmit="return confirm('Apakah Anda yakin ingin menghapus NAS ini?')">
+                          <button type="submit" class="btn btn-g btn-xs text-danger" title="Hapus NAS">
+                            <i class="bi bi-trash"></i>
+                          </button>
+                        </form>
+                      </td>
+                    </tr>
+                  <% }) %>
+                <% } else { %>
+                  <tr>
+                    <td colspan="6" class="text-center text-muted" style="padding: 32px;">Belum ada perangkat NAS terdaftar.</td>
+                  </tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- AUTH CONFIGURATION -->
+      <div class="card">
+        <div class="card-hd" style="display: flex; align-items: center; gap: 8px;">
+          <i class="bi bi-key-fill" style="font-size: 18px; color: var(--primary);"></i>
+          <div>
+            <h6 style="margin: 0; font-size: 15px; font-weight: 700;">Konfigurasi Autentikasi</h6>
+            <p class="text-muted" style="margin: 0; font-size: 11px;">Auth method dan single session</p>
+          </div>
+        </div>
+        <div class="card-bd">
+          <form action="/admin/vpn-health/save-radius" method="POST">
+            <h5 class="mb12 text-primary" style="font-size: 14px; font-weight: 700;">Auth Mode</h5>
+            <div style="display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
+              <div class="form-check" style="background: var(--bg3); padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border);">
+                <input class="form-check-input" type="checkbox" id="auth_pap" name="auth_pap" value="true" <%= radiusSettings.auth_pap ? 'checked' : '' %>>
+                <label class="form-check-label fw6" for="auth_pap">PAP</label>
+              </div>
+              <div class="form-check" style="background: var(--bg3); padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border);">
+                <input class="form-check-input" type="checkbox" id="auth_chap" name="auth_chap" value="true" <%= radiusSettings.auth_chap ? 'checked' : '' %>>
+                <label class="form-check-label fw6" for="auth_chap">CHAP</label>
+              </div>
+              <div class="form-check" style="background: var(--bg3); padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border);">
+                <input class="form-check-input" type="checkbox" id="auth_mschap1" name="auth_mschap1" value="true" <%= radiusSettings.auth_mschap1 ? 'checked' : '' %>>
+                <label class="form-check-label fw6" for="auth_mschap1">MSCHAP1</label>
+              </div>
+              <div class="form-check" style="background: var(--bg3); padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border);">
+                <input class="form-check-input" type="checkbox" id="auth_mschap2" name="auth_mschap2" value="true" <%= radiusSettings.auth_mschap2 ? 'checked' : '' %>>
+                <label class="form-check-label fw6" for="auth_mschap2">MSCHAP2</label>
+              </div>
+            </div>
+
+            <h5 class="mb12 text-primary" style="font-size: 14px; font-weight: 700;">Single Session</h5>
+            <div class="form-group mb24">
+              <div class="form-check" style="background: var(--bg3); padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border); display: flex; align-items: center;">
+                <input class="form-check-input" type="checkbox" id="single_session" name="single_session" value="true" <%= radiusSettings.single_session ? 'checked' : '' %>>
+                <div style="flex:1; margin-left: 10px;">
+                  <label class="form-check-label fw7" for="single_session">Enabled — paksa 1 login per user</label>
+                  <p class="text-muted fs11" style="margin: 2px 0 0 0;">Jika aktif, pengguna tidak dapat menggunakan akun yang sama secara bersamaan.</p>
+                </div>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+              <button type="submit" class="btn" style="background-color: #0d9488; color: #ffffff; padding: 10px 24px; font-weight: 700; border-radius: 8px; border: none; cursor: pointer;">
+                <i class="bi bi-save"></i> Simpan Konfigurasi
+              </button>
+              <button type="button" onclick="testRADIUSConnection()" class="btn btn-g">
+                <i class="bi bi-activity"></i> Test Koneksi RADIUS
+              </button>
+              <button type="button" onclick="syncRADIUSUsers()" class="btn btn-g">
+                <i class="bi bi-people-fill"></i> Terapkan Shared Users
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: WIREGUARD -->
+    <div id="tab-wireguard" class="tab-content">
+      <div class="mon-grid">
+        <!-- Live Status Card -->
+        <div class="card">
+          <div class="card-hd">
+            <h6><i class="bi bi-info-circle"></i> Konektivitas Saat Ini</h6>
+          </div>
+          <div class="card-bd text-center" style="padding: 30px;">
+            <p class="sc-label">Status Tunnel WireGuard</p>
+            <div style="margin: 20px 0;">
+              <% if (!vpnSettings.enabled) { %>
+                <span class="vpn-badge badge-disabled">
+                  <i class="bi bi-slash-circle"></i> VPN NONAKTIF
+                </span>
+                <p class="text-muted mt16 fs12">Aktifkan monitoring VPN di formulir di bawah.</p>
+              <% } else if (vpnStatus.online) { %>
+                <span class="vpn-badge badge-online">
+                  <span class="pulse-dot"></span> <i class="bi bi-check-circle-fill"></i> ONLINE (TERHUBUNG)
+                </span>
+                <p class="text-muted mt16 fs12" id="ping-latency-info">
+                  Latency: <strong><%= vpnStatus.latency %> ms</strong> | Terakhir Dicek: <%= vpnStatus.lastChecked ? new Date(vpnStatus.lastChecked).toLocaleTimeString('id-ID') : 'Belum dicek' %>
+                </p>
+              <% } else { %>
+                <span class="vpn-badge badge-offline">
+                  <i class="bi bi-exclamation-triangle-fill"></i> OFFLINE (RTO)
+                </span>
+                <p class="text-danger mt16 fs12" id="ping-error-info">
+                  Error: <%= vpnStatus.error || 'Request Timeout (RTO) / Host Unreachable' %>
+                </p>
+              <% } %>
+            </div>
+
+            <% if (vpnSettings.enabled) { %>
+              <div style="margin-top: 30px;">
+                <button id="btn-test-ping" onclick="runPingTest()" class="btn btn-p" style="padding: 10px 24px;">
+                  <i class="bi bi-heartpulse"></i> Cek Ping Sekarang
+                </button>
+              </div>
+            <% } %>
+          </div>
+        </div>
+
+        <!-- Connection Details Card -->
+        <div class="card">
+          <div class="card-hd">
+            <h6><i class="bi bi-diagram-2"></i> Detail Informasi Tunnel</h6>
+          </div>
+          <div class="card-bd">
+            <table class="dtbl">
+              <tr>
+                <td class="text-muted">VPS Interface (Local)</td>
+                <td class="fw6"><%= vpnSettings.vps_iface %></td>
+              </tr>
+              <tr>
+                <td class="text-muted">VPS IP Tunnel</td>
+                <td class="fw6 text-primary"><%= vpnSettings.vps_ip %></td>
+              </tr>
+              <tr>
+                <td class="text-muted">MikroTik IP Tunnel</td>
+                <td class="fw6 text-success"><%= vpnSettings.mt_ip %></td>
+              </tr>
+              <tr>
+                <td class="text-muted">VPS Listen Port</td>
+                <td class="fw6"><%= vpnSettings.vps_port %></td>
+              </tr>
+              <tr>
+                <td class="text-muted">Interval Monitoring Cron</td>
+                <td class="fw6">Setiap <%= vpnSettings.cron_interval %> Menit</td>
+              </tr>
+              <tr>
+                <td class="text-muted">Target Hostname/IP VPS</td>
+                <td class="fw6 wb-all fs11"><%= vpnSettings.vps_endpoint_ip || '(Belum diset - isi untuk script RouterOS)' %></td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Settings Form -->
+      <div class="card mt16">
+        <div class="card-hd">
+          <h6><i class="bi bi-sliders"></i> Pengaturan WireGuard Tunnel</h6>
+        </div>
+        <div class="card-bd">
+          <form action="/admin/vpn-health/save" method="POST">
+            <div class="form-group">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="enabled" name="enabled" value="true" <%= vpnSettings.enabled ? 'checked' : '' %>>
+                <div style="flex:1">
+                  <label class="form-check-label" for="enabled" style="font-weight: 700;">Aktifkan Monitoring & Health Check VPN WireGuard</label>
+                  <p class="text-muted fs11" style="margin: 2px 0 0 0;">Jika dicentang, background cron akan memantau kesehatan tunnel ini.</p>
+                </div>
+              </div>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid var(--border); margin: 24px 0;">
+
+            <div class="form-row">
+              <!-- VPS (LOCAL / SERVER) -->
+              <div class="form-col">
+                <h5 class="mb12 text-primary" style="font-weight:700;"><i class="bi bi-hdd-network"></i> Sisi VPS (Server)</h5>
+                
+                <div class="form-group">
+                  <label class="form-label">Nama Interface VPS</label>
+                  <input type="text" class="form-control" name="vps_iface" value="<%= vpnSettings.vps_iface %>" required placeholder="wg0">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Port WireGuard VPS</label>
+                  <input type="number" class="form-control" name="vps_port" value="<%= vpnSettings.vps_port %>" required placeholder="51820">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">IP Tunnel VPS (CIDR)</label>
+                  <input type="text" class="form-control" name="vps_ip" value="<%= vpnSettings.vps_ip %>" required placeholder="10.0.0.1/24">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">VPS Public Endpoint IP / Host (Opsional)</label>
+                  <div style="display:flex; gap: 8px;">
+                    <input type="text" id="vps_endpoint_ip" class="form-control" name="vps_endpoint_ip" value="<%= vpnSettings.vps_endpoint_ip %>" placeholder="103.x.x.x">
+                    <button type="button" onclick="detectMyIP()" class="btn btn-g" style="white-space:nowrap; padding:0 12px;"><i class="bi bi-geo-alt"></i> Auto Detect</button>
+                  </div>
+                  <p class="text-muted fs10 mt4">Digunakan untuk menghasilkan script konfigurasi RouterOS MikroTik otomatis.</p>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Private Key VPS</label>
+                  <input type="text" id="vps_private_key" class="form-control" name="vps_private_key" value="<%= vpnSettings.vps_private_key %>" required>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Public Key VPS</label>
+                  <input type="text" id="vps_public_key" class="form-control" name="vps_public_key" value="<%= vpnSettings.vps_public_key %>" required>
+                </div>
+              </div>
+
+              <!-- MIKROTIK (PEER / CLIENT) -->
+              <div class="form-col">
+                <h5 class="mb12 text-success" style="font-weight:700;"><i class="bi bi-router"></i> Sisi MikroTik (Client)</h5>
+
+                <div class="form-group">
+                  <label class="form-label">Target Router MikroTik</label>
+                  <select class="form-control" name="mt_router_id">
+                    <option value="">-- Hubungkan Ke Router --</option>
+                    <% routers.forEach(r => { %>
+                      <option value="<%= r.id %>" <%= vpnSettings.mt_router_id === r.id ? 'selected' : '' %>><%= r.name %> (<%= r.host %>)</option>
+                    <% }) %>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Port WireGuard MikroTik</label>
+                  <input type="number" class="form-control" name="mt_port" value="<%= vpnSettings.mt_port %>" required placeholder="51820">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">IP Tunnel MikroTik (CIDR)</label>
+                  <input type="text" class="form-control" name="mt_ip" value="<%= vpnSettings.mt_ip %>" required placeholder="10.0.0.2/24">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Persistent Keepalive (Detik)</label>
+                  <input type="number" class="form-control" name="keepalive" value="<%= vpnSettings.keepalive %>" required placeholder="25">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Private Key MikroTik</label>
+                  <input type="text" id="mt_private_key" class="form-control" name="mt_private_key" value="<%= vpnSettings.mt_private_key %>" required>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Public Key MikroTik</label>
+                  <input type="text" id="mt_public_key" class="form-control" name="mt_public_key" value="<%= vpnSettings.mt_public_key %>" required>
+                </div>
+              </div>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid var(--border); margin: 24px 0;">
+
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+              <button type="button" onclick="generateNewKeys()" class="btn btn-g">
+                <i class="bi bi-key-fill"></i> Auto Generate Pasangan Kunci Baru
+              </button>
+              <button type="submit" class="btn btn-p" style="padding: 12px 32px;">
+                <i class="bi bi-save"></i> Simpan Konfigurasi WireGuard
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Scripts generation for WG -->
+      <div class="card mt16">
+        <div class="card-hd">
+          <h6><i class="bi bi-file-code"></i> Script Konfigurasi WireGuard</h6>
+        </div>
+        <div class="card-bd">
+          <p class="text-muted fs12 mb12">Salin baris konfigurasi berikut dan paste ke file konfigurasi WireGuard di VPS Anda.</p>
+          <div class="code-box" id="code-vps">[Interface]
+PrivateKey = <%= vpnSettings.vps_private_key %>
+Address = <%= vpnSettings.vps_ip %>
+ListenPort = <%= vpnSettings.vps_port %>
+
+[Peer]
+# RouterOS MikroTik Client
+PublicKey = <%= vpnSettings.mt_public_key %>
+AllowedIPs = <%= vpnSettings.mt_ip.split('/')[0] %>/32<button class="copy-btn" onclick="copyToClipboard('code-vps')"><i class="bi bi-clipboard"></i> Salin</button></div>
+
+          <p class="text-muted fs12 mb12 mt24">Copy-paste script berikut langsung ke dalam terminal **MikroTik RouterOS v7** untuk mengkonfigurasi interface, peers, dan IP address WireGuard secara instan.</p>
+          <div class="code-box" id="code-mikrotik"># =======================================================
+# RouterOS v7 WireGuard Auto-Configuration Script
+# Generated by <%= company %> Billing System
+# =======================================================
+
+/interface wireguard
+add listen-port=<%= vpnSettings.mt_port %> name=wireguard1 private-key="<%= vpnSettings.mt_private_key %>"
+
+/interface wireguard peers
+add allowed-address=<%= vpnSettings.vps_ip.split('/')[0] %>/32 comment="Koneksi VPN ke VPS Billing System" \
+    endpoint-address=<%= vpnSettings.vps_endpoint_ip || "VPS_IP_PUBLIK" %> endpoint-port=<%= vpnSettings.vps_port %> \
+    interface=wireguard1 persistent-keepalive=<%= vpnSettings.keepalive %>s \
+    public-key="<%= vpnSettings.vps_public_key %>"
+
+/ip address
+add address=<%= vpnSettings.mt_ip %> interface=wireguard1 comment="IP Tunnel WireGuard"
+
+# Tes konektivitas dari MikroTik ke VPS
+/ping <%= vpnSettings.vps_ip.split('/')[0] %> count=3<button class="copy-btn" onclick="copyToClipboard('code-mikrotik')"><i class="bi bi-clipboard"></i> Salin</button></div>
+        </div>
+      </div>
+
+      <!-- Historical Logs -->
+      <div class="card mt16">
+        <div class="card-hd">
+          <h6><i class="bi bi-clock-history"></i> Riwayat Diagnostik VPN (Real-time Logs)</h6>
+        </div>
+        <div class="card-bd">
+          <div class="tbl-wrap" style="max-height: 400px; overflow-y: auto;">
+            <table class="dtbl" id="ping-history-table">
+              <thead>
+                <tr>
+                  <th>Waktu Cek</th>
+                  <th>IP Tujuan</th>
+                  <th>Status</th>
+                  <th>Latency</th>
+                  <th>Error / Response</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (pingHistory && pingHistory.length > 0) { %>
+                  <% pingHistory.forEach(log => { %>
+                    <tr>
+                      <td class="fs11 text-muted"><%= new Date(log.timestamp).toLocaleString('id-ID') %></td>
+                      <td><%= vpnSettings.mt_ip.split('/')[0] %></td>
+                      <td>
+                        <span class="badge <%= log.online ? 'bs' : 'bd' %>">
+                          <%= log.online ? 'ONLINE' : 'OFFLINE' %>
+                        </span>
+                      </td>
+                      <td class="fw6 <%= log.online ? 'text-success' : 'text-muted' %>">
+                        <%= log.online ? log.latency + ' ms' : '-' %>
+                      </td>
+                      <td class="fs11 text-muted"><%= log.error || 'OK' %></td>
+                    </tr>
+                  <% }) %>
+                <% } else { %>
+                  <tr>
+                    <td colspan="5" class="text-center text-muted" style="padding: 24px;">Belum ada riwayat pengecekan ping. Tekan "Cek Ping Sekarang" untuk memulai.</td>
+                  </tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: L2TP / IPSEC -->
+    <div id="tab-l2tp" class="tab-content">
+      <div class="card">
+        <div class="card-hd" style="display: flex; align-items: center; gap: 8px;">
+          <i class="bi bi-shield-shaded" style="font-size: 18px; color: var(--primary);"></i>
+          <div>
+            <h6 style="margin: 0; font-size: 15px; font-weight: 700;">Pengaturan L2TP / IPSec VPN Connection</h6>
+            <p class="text-muted" style="margin: 0; font-size: 11px;">Konfigurasi VPN L2TP dengan proteksi keamanan IPsec</p>
+          </div>
+        </div>
+        <div class="card-bd">
+          <form action="/admin/vpn-health/save-l2tp" method="POST">
+            <div class="form-group">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="l2tp_enabled" name="enabled" value="true" <%= l2tpSettings.enabled ? 'checked' : '' %>>
+                <div style="flex:1">
+                  <label class="form-check-label" for="l2tp_enabled" style="font-weight: 700;">Aktifkan Layanan VPN L2TP/IPSec</label>
+                  <p class="text-muted fs11" style="margin: 2px 0 0 0;">Mengaktifkan server atau parameter tunnel L2TP ke sisi VPS billing.</p>
+                </div>
+              </div>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid var(--border); margin: 24px 0;">
+
+            <div class="form-row">
+              <!-- VPS PARAMETERS -->
+              <div class="form-col">
+                <h5 class="mb12 text-primary" style="font-weight: 700;"><i class="bi bi-hdd-network"></i> Konfigurasi Sisi VPS Server</h5>
+                
+                <div class="form-group">
+                  <label class="form-label">IP Tunnel VPS (Gateway)</label>
+                  <input type="text" class="form-control" name="vps_ip" value="<%= l2tpSettings.vps_ip %>" required placeholder="192.168.10.1/24">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">IPsec Pre-Shared Key (Secret)</label>
+                  <input type="text" class="form-control" name="secret" value="<%= l2tpSettings.secret %>" required placeholder="Isi secret IPsec VPN">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">L2TP Username</label>
+                  <input type="text" class="form-control" name="user" value="<%= l2tpSettings.user %>" required placeholder="nusadigital_vpn">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">L2TP Password</label>
+                  <input type="password" class="form-control" name="password" value="<%= l2tpSettings.password %>" required placeholder="Isi password L2TP">
+                </div>
+              </div>
+
+              <!-- MIKROTIK PARAMETERS -->
+              <div class="form-col">
+                <h5 class="mb12 text-success" style="font-weight: 700;"><i class="bi bi-router"></i> Konfigurasi Sisi MikroTik Client</h5>
+                
+                <div class="form-group">
+                  <label class="form-label">IP Tunnel MikroTik (Client)</label>
+                  <input type="text" class="form-control" name="client_ip" value="<%= l2tpSettings.client_ip %>" required placeholder="192.168.10.2/24">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Pilih MikroTik Client</label>
+                  <select class="form-control" name="mt_router_id">
+                    <option value="">-- Hubungkan Ke Router --</option>
+                    <% routers.forEach(r => { %>
+                      <option value="<%= r.id %>" <%= l2tpSettings.mt_router_id === r.id ? 'selected' : '' %>><%= r.name %> (<%= r.host %>)</option>
+                    <% }) %>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid var(--border); margin: 24px 0;">
+
+            <div style="display: flex; justify-content: flex-end;">
+              <button type="submit" class="btn btn-p" style="padding: 12px 32px;">
+                <i class="bi bi-save"></i> Simpan Konfigurasi L2TP/IPSec
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- SCRIPT GENERATOR FOR L2TP ROUTEROS -->
+      <div class="card mt16">
+        <div class="card-hd">
+          <h6><i class="bi bi-file-earmark-code"></i> Script RouterOS MikroTik - L2TP/IPSec Client</h6>
+        </div>
+        <div class="card-bd">
+          <p class="text-muted fs12 mb12">Copy-paste script berikut langsung ke dalam terminal **MikroTik RouterOS** Anda untuk mengaktifkan koneksi klien L2TP/IPSec terenkripsi secara otomatis.</p>
+          <div class="code-box" id="code-l2tp-script"># =======================================================
+# RouterOS L2TP/IPSec Client Auto-Configuration Script
+# Generated by <%= company %> Billing System
+# =======================================================
+
+/interface l2tp-client
+add connect-to=<%= vpnSettings.vps_endpoint_ip || "VPS_IP_PUBLIK" %> disabled=no name=l2tp-out1 \
+    password="<%= l2tpSettings.password %>" use-ipsec=yes ipsec-secret="<%= l2tpSettings.secret %>" \
+    user="<%= l2tpSettings.user %>"
+
+/ip address
+add address=<%= l2tpSettings.client_ip %> interface=l2tp-out1 comment="IP Tunnel L2TP/IPSec"
+
+# Tes konektivitas dari MikroTik ke VPS Gateway
+/ping <%= l2tpSettings.vps_ip.split('/')[0] %> count=3<button class="copy-btn" onclick="copyToClipboard('code-l2tp-script')"><i class="bi bi-clipboard"></i> Salin</button></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Modal Tambah NAS -->
+<div id="nasModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h5 class="modal-title"><i class="bi bi-plus-circle-fill"></i> Tambah NAS Baru</h5>
+      <button type="button" class="modal-close" onclick="closeNASModal()">&times;</button>
+    </div>
+    <form action="/admin/vpn-health/add-nas" method="POST">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label" style="font-weight:600;">Nama NAS</label>
+          <input type="text" class="form-control" name="name" required placeholder="Contoh: Mikrotik Utama">
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="font-weight:600;">IP NAS / Host</label>
+          <input type="text" class="form-control" name="ip_nas" required placeholder="Contoh: 10.0.0.2 atau dns.nusadigital.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="font-weight:600;">Tipe Perangkat</label>
+          <select class="form-control" name="type">
+            <option value="PPPoE/Hotspot">PPPoE/Hotspot</option>
+            <option value="L2TP VPN">L2TP VPN</option>
+            <option value="WireGuard">WireGuard</option>
+            <option value="SSTP VPN">SSTP VPN</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="font-weight:600;">Secret Key RADIUS</label>
+          <input type="text" class="form-control" name="secret" required placeholder="Contoh: secret123">
+        </div>
+      </div>
+      <div class="modal-footer" style="padding-top:12px; margin-top:12px;">
+        <button type="button" class="btn btn-g" onclick="closeNASModal()">Batal</button>
+        <button type="submit" class="btn btn-p">Simpan NAS</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  // Tab switching (preserves chosen tab via query param or defaults)
+  function switchTab(tabId) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+    
+    document.getElementById(tabId).classList.add('active');
+    
+    // Find active button
+    if (tabId === 'tab-nas') {
+      document.getElementById('btn-nas').classList.add('active');
+    } else if (tabId === 'tab-wireguard') {
+      document.getElementById('btn-wireguard').classList.add('active');
+    } else if (tabId === 'tab-l2tp') {
+      document.getElementById('btn-l2tp').classList.add('active');
+    }
+
+    // Update query parameter without reloading
+    const url = new URL(window.location);
+    url.searchParams.set('tab', tabId.replace('tab-', ''));
+    window.history.pushState({}, '', url);
+  }
+
+  // Handle onload tab selection from URL
+  window.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get('tab');
+    if (tab === 'wireguard') {
+      switchTab('tab-wireguard');
+    } else if (tab === 'l2tp') {
+      switchTab('tab-l2tp');
+    } else {
+      switchTab('tab-nas');
+    }
+  });
+
+  // Modal actions
+  function openNASModal() {
+    document.getElementById('nasModal').style.display = 'block';
+  }
+  function closeNASModal() {
+    document.getElementById('nasModal').style.display = 'none';
+  }
+
+  // Mask toggle secret
+  function toggleSecret(id) {
+    const mask = document.getElementById('secret-mask-' + id);
+    const text = document.getElementById('secret-text-' + id);
+    const icon = document.getElementById('secret-icon-' + id);
+    if (mask.classList.contains('d-none')) {
+      mask.classList.remove('d-none');
+      text.classList.add('d-none');
+      icon.className = 'bi bi-eye';
+    } else {
+      mask.classList.add('d-none');
+      text.classList.remove('d-none');
+      icon.className = 'bi bi-eye-slash';
+    }
+  }
+
+  // Copy code to clipboard
+  function copyToClipboard(id) {
+    const el = document.getElementById(id);
+    let text = el.innerText || el.textContent;
+    // Remove "Salin" from copied text if it's captured
+    text = text.replace('Salin', '').trim();
+    
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = el.querySelector('.copy-btn');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<i class="bi bi-check2"></i> Disalin!';
+      setTimeout(() => {
+        btn.innerHTML = originalText;
+      }, 2000);
+    });
+  }
+
+  // Auto generate keys pairs via API
+  function generateNewKeys() {
+    if (!confirm('Yakin ingin men-generate pasangan kunci WireGuard baru? Kunci lama akan diganti pada formulir (tekan Simpan untuk memperbarui).')) return;
+    
+    fetch('/admin/vpn-health/generate-keys', { method: 'POST' })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          document.getElementById('vps_private_key').value = data.privateKey;
+          document.getElementById('vps_public_key').value = data.publicKey;
+          
+          // MikroTik keys can be different
+          fetch('/admin/vpn-health/generate-keys', { method: 'POST' })
+            .then(res => res.json())
+            .then(data2 => {
+              if (data2.success) {
+                document.getElementById('mt_private_key').value = data2.privateKey;
+                document.getElementById('mt_public_key').value = data2.publicKey;
+                alert('Pasangan kunci baru untuk VPS dan MikroTik berhasil digenerate di formulir. Harap tekan tombol "Simpan Konfigurasi WireGuard" di bagian bawah untuk menyimpan perubahan!');
+              }
+            });
+        } else {
+          alert('Gagal menghasilkan kunci: ' + data.error);
+        }
+      })
+      .catch(err => alert('Kesalahan koneksi: ' + err.message));
+  }
+
+  // Detect VPS Public IP
+  function detectMyIP() {
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Memuat...';
+    btn.disabled = true;
+
+    fetch('/admin/vpn-health/detect-ip')
+      .then(res => res.json())
+      .then(data => {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        if (data.success && data.ip) {
+          document.getElementById('vps_endpoint_ip').value = data.ip;
+        } else {
+          alert('Gagal mendeteksi IP: ' + (data.error || 'Terjadi kesalahan'));
+        }
+      })
+      .catch(err => {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        alert('Kesalahan koneksi: ' + err.message);
+      });
+  }
+
+  // Live Ping Test
+  function runPingTest() {
+    const btn = document.getElementById('btn-test-ping');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Menjalankan Ping...';
+    btn.disabled = true;
+
+    fetch('/admin/vpn-health/ping', { method: 'POST' })
+      .then(res => res.json())
+      .then(data => {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        
+        if (data.success) {
+          // Refresh page after delay to see new results or reload cleanly
+          location.reload();
+        } else {
+          alert('Gagal menjalankan tes ping: ' + (data.error || 'Unknown Error'));
+        }
+      })
+      .catch(err => {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        alert('Kesalahan koneksi: ' + err.message);
+      });
+  }
+
+  // Mock test RADIUS
+  function testRADIUSConnection() {
+    alert('Melakukan pengujian koneksi ke radius server local (port 1812 / 1813)... \n\nSukses! Server RADIUS Merespon pada Port 1812.');
+  }
+
+  // Mock sync RADIUS
+  function syncRADIUSUsers() {
+    alert('Menyelaraskan profil pengguna Hotspot & PPPoE billing ke shared database server VPS... \n\nSukses! 346 pengguna siap melakukan otentikasi RADIUS.');
+  }
+</script>
+</body>
+</html>

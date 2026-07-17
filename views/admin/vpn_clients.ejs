@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title><%= title %> | <%= company %></title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/css/admin.css">
+  <style>
+    .hero-header {
+      background: linear-gradient(135deg, var(--primary), #3b82f6);
+      color: white;
+      padding: 24px;
+      border-radius: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+    .hero-header .icon-container {
+      width: 48px;
+      height: 48px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      font-size: 24px;
+      margin-right: 16px;
+    }
+    .instruction-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+    }
+    .instruction-icon {
+      background: rgba(59, 130, 246, 0.1);
+      color: var(--primary);
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    .instruction-steps {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 8px;
+    }
+    .step-badge {
+      background: var(--primary);
+      color: white;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: inline-grid;
+      place-items: center;
+      font-size: 12px;
+      font-weight: bold;
+      margin-right: 8px;
+    }
+    .step-item {
+      display: flex;
+      align-items: center;
+      background: var(--bg3);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      color: var(--text);
+    }
+    
+    .empty-state {
+      background: var(--bg2);
+      border: 1px dashed var(--border);
+      border-radius: 16px;
+      padding: 60px 20px;
+      text-align: center;
+    }
+    .empty-icon {
+      width: 80px;
+      height: 80px;
+      background: rgba(59, 130, 246, 0.1);
+      color: var(--primary);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      margin: 0 auto 20px auto;
+    }
+    
+    .client-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .client-info h3 {
+      margin: 0 0 4px 0;
+      font-size: 16px;
+      color: var(--text);
+    }
+    .client-info p {
+      margin: 0;
+      font-size: 13px;
+      color: var(--muted);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .code-box {
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 16px;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 13px;
+      white-space: pre-wrap;
+      position: relative;
+      margin-top: 12px;
+    }
+    .copy-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: rgba(255,255,255,0.1);
+      border: none;
+      color: white;
+      padding: 4px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .copy-btn:hover {
+      background: rgba(255,255,255,0.2);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <%- include('partials/sidebar') %>
+    <main class="main-content">
+      <header class="top-header">
+        <button class="menu-btn" onclick="toggleSidebar()"><i class="bi bi-list"></i></button>
+        <div class="user-info">
+          <span class="user-role"><%= (typeof user !== 'undefined' && user && user.role) ? user.role : ((typeof session !== 'undefined' && session.isCashier) ? 'Kasir' : 'Admin') %></span>
+          <span class="user-name"><%= (typeof user !== 'undefined' && user && user.username) ? user.username : ((typeof session !== 'undefined' && session.isCashier) ? (session.cashierUsername || 'Kasir') : (session.adminUser || 'admin')) %></span>
+        </div>
+      </header>
+
+      <div class="content-wrapper">
+        <div class="hero-header">
+          <div style="display:flex; align-items:center;">
+            <div class="icon-container">
+              <i class="bi bi-shield-lock"></i>
+            </div>
+            <div>
+              <h1 style="margin:0; font-size:20px; font-weight:700;">VPN Clients</h1>
+              <p style="margin:4px 0 0 0; font-size:14px; opacity:0.9;">Kelola akun VPN WireGuard & L2TP untuk koneksi aman dari server ke MikroTik Anda</p>
+            </div>
+          </div>
+          <button class="btn" style="background:white; color:var(--primary); font-weight:bold; border:none;" onclick="openCreateModal()">
+            <i class="bi bi-plus-lg"></i> Buat VPN Client
+          </button>
+        </div>
+
+        <!-- VPS Server Installer Section -->
+        <div class="card mb24" style="background:var(--bg2); border:1px solid var(--border); border-radius:12px; overflow:hidden;">
+          <div style="padding:16px 20px; display:flex; justify-content:space-between; align-items:center; background:rgba(99, 102, 241, 0.05); border-bottom:1px solid var(--border);">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div style="background:rgba(99, 102, 241, 0.1); color:var(--primary); width:36px; height:36px; border-radius:8px; display:grid; place-items:center; font-size:18px;">
+                <i class="bi bi-terminal"></i>
+              </div>
+              <div>
+                <h3 style="margin:0; font-size:15px; font-weight:700; color:var(--text);">VPS Server Installer</h3>
+                <p style="margin:2px 0 0 0; font-size:12px; color:var(--muted);">Skrip otomatis untuk setup VPN Server (L2TP/IPsec &amp; WireGuard) di VPS Anda</p>
+              </div>
+            </div>
+            <button class="btn btn-g btn-sm" onclick="toggleInstallerCode()"><i class="bi bi-chevron-down" id="installer-icon"></i> Tampilkan Skrip</button>
+          </div>
+          <div id="installer-code-section" style="display:none; padding:20px; border-top:1px solid var(--border);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px; border-bottom:1px solid var(--border); padding-bottom:12px;">
+              <span style="font-size:13px; font-weight:600; color:var(--text);">Pilih Tipe VPN Server:</span>
+              <div style="display:flex; gap:8px;">
+                <button type="button" class="btn btn-sm btn-p" id="btn-show-l2tp-script" onclick="switchInstallerScript('L2TP')" style="font-size:12px; padding:6px 12px;">L2TP / IPsec (v6 &amp; v7)</button>
+                <button type="button" class="btn btn-sm btn-g" id="btn-show-wg-script" onclick="switchInstallerScript('WireGuard')" style="font-size:12px; padding:6px 12px;">WireGuard (v7 Only)</button>
+              </div>
+            </div>
+
+            <!-- L2TP Installer Section -->
+            <div id="l2tp-installer-section">
+              <p style="font-size:13px; color:var(--text); margin-bottom:12px;">
+                Jalankan perintah berikut di terminal VPS Ubuntu/Debian Anda sebagai <strong>root</strong> untuk menginstal <strong>strongSwan (IPsec) + xl2tpd (L2TP)</strong> secara otomatis:
+              </p>
+              <div class="code-box" id="code-installer-script" style="max-height:350px; overflow-y:auto; margin-top:8px;"># ============================================================================
+# SALFANET RADIUS — L2TP/IPsec VPN SERVER Installer
+# ============================================================================
+# Mengkonfigurasi VPS sebagai L2TP/IPsec VPN SERVER (strongSwan + xl2tpd)
+# Cocok untuk NAS RouterOS 6.x yang tidak support WireGuard.
+#
+# Arsitektur:
+#   NAS (MikroTik RouterOS 6+) &lt;─ L2TP/IPsec client ─&gt; VPS (xl2tpd/strongswan)
+#   VPS assign IP pool 10.201.0.x per NAS ─&gt; FreeRADIUS sees NAS by VP IP
+#
+# Dipanggil oleh: vps-installer.sh (Step opsional) atau manual
+#
+# Usage:
+#   bash install-l2tp-server.sh [--subnet 10.201.0.0/24] [--ipsec-psk "my-psk"]
+#   Variabel lingkungan:
+#     L2TP_SUBNET    — IP pool untuk klien L2TP (default: 10.201.0.0/24)
+#     L2TP_PSK       — IPsec Pre-Shared Key (default: auto-generated)
+#     L2TP_LOCAL_IP  — IP VPS di dalam tunnel (default: derived dari subnet .1)
+# ============================================================================
+
+set -euo pipefail
+
+# ── Nilai default ──────────────────────────────────────────────────────────
+L2TP_SUBNET="${L2TP_SUBNET:-10.201.0.0/24}"
+L2TP_PSK="${L2TP_PSK:-}"           # Dikosongkan = auto-generate
+L2TP_CONF_DIR="/etc/salfanet/l2tp"
+INFO_FILE="${L2TP_CONF_DIR}/l2tp-server-info.json"
+
+# Parse CLI args
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --subnet)    L2TP_SUBNET="$2";  shift 2 ;;
+    --ipsec-psk) L2TP_PSK="$2";     shift 2 ;;
+    *) shift ;;
+  esac
+done
+
+# ── Helper functions ───────────────────────────────────────────────────────
+print_header() { echo ""; echo "╔══════════════════════════════════════════╗"; echo "║  L2TP/IPsec VPN Server — SALFANET RADIUS ║"; echo "╚══════════════════════════════════════════╝"; echo ""; }
+print_info()    { echo "[INFO]  $*"; }
+print_ok()      { echo "[OK]    $*"; }
+print_warn()    { echo "[WARN]  $*"; }
+print_error()   { echo "[ERROR] $*" >&2; }
+
+gen_password() { tr -dc 'A-Za-z0-9!@#%^&*' < /dev/urandom | head -c 24 || true; }
+
+# Derive IP dari subnet
+derive_ip() {
+  local subnet="$1" octet="$2"
+  local base="${subnet%/*}"
+  echo "\$(echo "\$base" | cut -d. -f1-3).\${octet}"
+}
+
+# ── Root check ─────────────────────────────────────────────────────────────
+if [[ \$EUID -ne 0 ]]; then
+  print_error "Harus dijalankan sebagai root"
+  exit 1
+fi
+
+print_header
+
+# ── Derive IPs ─────────────────────────────────────────────────────────────
+L2TP_LOCAL_IP="\${L2TP_LOCAL_IP:-\$(derive_ip "\${L2TP_SUBNET}" 1)}"
+L2TP_POOL_START="\$(derive_ip "\${L2TP_SUBNET}" 10)"
+L2TP_POOL_END="\$(derive_ip "\${L2TP_SUBNET}" 254)"
+SUBNET_MASK="\${L2TP_SUBNET#*/}"
+
+if [[ -z "\${L2TP_PSK}" ]]; then
+  # Auto-generate PSK jika tidak diisi, tapi simpan agar konsisten
+  PSK_FILE="/etc/salfanet/l2tp/ipsec.psk"
+  if [[ -f "\${PSK_FILE}" ]]; then
+    L2TP_PSK="\$(cat "\${PSK_FILE}")"
+  else
+    L2TP_PSK="\$(gen_password)"
+  fi
+fi
+
+PUBLIC_IP=""
+PUBLIC_IP=\$(curl -4 -s --connect-timeout 5 ifconfig.me 2>/dev/null || \\
+            curl -4 -s --connect-timeout 5 api.ipify.org 2>/dev/null || \\
+            hostname -I 2>/dev/null | awk '{print \$1}' || echo "unknown")
+
+print_info "Subnet      : \${L2TP_SUBNET}"
+print_info "VPS local IP: \${L2TP_LOCAL_IP}"
+print_info "Pool        : \${L2TP_POOL_START} – \text{L2TP_POOL_END}"
+print_info "Public IP   : \${PUBLIC_IP}"
+
+# ── [1] Install packages ───────────────────────────────────────────────────
+print_info "[1/6] Install strongswan + xl2tpd..."
+apt-get update -qq
+DEBIAN_FRONTEND=noninteractive apt-get install -y \\
+  strongswan strongswan-pki libcharon-extra-plugins \\
+  xl2tpd ppp iptables || { print_error "apt-get install gagal"; exit 1; }
+
+for bin in xl2tpd ipsec; do
+  if ! command -v "\$bin" &gt;/dev/null; then
+    print_error "\$bin tidak terinstall"
+    exit 1
+  fi
+done
+print_ok "strongSwan: \$(ipsec --version 2&gt;&1 | head -1)"
+print_ok "xl2tpd   : \$(xl2tpd --version 2&gt;&1 | head -1 || echo 'installed')"
+
+# ── [2] IPsec / strongSwan config ─────────────────────────────────────────
+print_info "[2/6] Konfigurasi strongSwan..."
+mkdir -p "\${L2TP_CONF_DIR}"
+chmod 700 "\${L2TP_CONF_DIR}"
+
+# Simpan PSK
+echo "\text{L2TP_PSK}" &gt; "\text{L2TP_CONF_DIR}/ipsec.psk"
+chmod 600 "\text{L2TP_CONF_DIR}/ipsec.psk"
+
+cat &gt; /etc/ipsec.conf &lt;&lt; IPSECEOF
+# SALFANET RADIUS — strongSwan L2TP/IPsec Server
+# managed by salfanet-radius app
+
+config setup
+  uniqueIDs=no
+
+conn %default
+  ikelifetime=60m
+  keylife=20m
+  rekeymargin=3m
+  keyingtries=1
+  authby=secret
+  ike=aes256-sha256-modp2048,aes256-sha1-modp1024!
+  esp=aes256-sha256,aes256-sha1!
+
+conn L2TP-PSK
+  keyexchange=ikev1
+  left=%defaultroute
+  leftprotoport=17/1701
+  right=%any
+  rightprotoport=17/%any
+  type=transport
+  auto=add
+IPSECEOF
+
+# IPsec secrets (PSK wildcard — berlaku untuk IP mana pun)
+cat &gt; /etc/ipsec.secrets &lt;&lt; SECREOF
+# SALFANET RADIUS — IPsec PSK
+# Format: local remote : PSK "secret"
+%any  %any  : PSK "\${L2TP_PSK}"
+SECREOF
+chmod 600 /etc/ipsec.secrets
+
+print_ok "strongSwan dikonfigurasi (PSK: \${L2TP_PSK:0:8}...)"
+
+# ── [3] xl2tpd server config ───────────────────────────────────────────────
+print_info "[3/6] Konfigurasi xl2tpd server..."
+
+cat &gt; /etc/xl2tpd/xl2tpd.conf &lt;&lt; XEOF
+[global]
+port = 1701
+auth file = /etc/ppp/chap-secrets
+access control = no
+
+[lns default]
+ip range = \${L2TP_POOL_START}-\${L2TP_POOL_END}
+local ip = \${L2TP_LOCAL_IP}
+require chap = yes
+refuse pap = yes
+require authentication = yes
+ppp debug = yes
+pppoptfile = /etc/ppp/options.xl2tpd.server
+length bit = yes
+XEOF
+
+cat &gt; /etc/ppp/options.xl2tpd.server &lt;&lt; PPPEOF
+# PPP options for xl2tpd server (SALFANET RADIUS)
+ipcp-accept-local
+ipcp-accept-remote
+ms-dns 8.8.8.8
+ms-dns 8.8.4.4
+noccp
+auth
+mtu 1280
+mru 1280
+nodefaultroute
+persist
+lock
+proxyarp
+connect-delay 5000
+# LCP keepalive
+lcp-echo-interval 30
+lcp-echo-failure 4
+PPPEOF
+
+print_ok "xl2tpd server dikonfigurasi"
+
+# ── [4] IP forwarding + iptables ──────────────────────────────────────────
+print_info "[4/6] Aktifkan IP forwarding + firewall rules..."
+sysctl -w net.ipv4.ip_forward=1 &gt; /dev/null
+
+SYSCTL_FILE="/etc/sysctl.d/99-l2tp-forward.conf"
+if [[ ! -f "\${SYSCTL_FILE}" ]]; then
+  echo "net.ipv4.ip_forward = 1" &gt; "\${SYSCTL_FILE}"
+fi
+
+# UFW atau iptables
+if command -v ufw &gt;/dev/null && ufw status | grep -q "Status: active"; then
+  ufw allow 500/udp  comment "IPsec IKE"     &gt; /dev/null 2&gt;&1 || true
+  ufw allow 4500/udp comment "IPsec NAT-T"   &gt; /dev/null 2&gt;&1 || true
+  ufw allow 1701/udp comment "L2TP"          &gt; /dev/null 2&gt;&1 || true
+  print_ok "UFW: 500/4500/1701 udp dibuka"
+else
+  for port in 500 4500 1701; do
+    iptables -C INPUT -p udp --dport "\${port}" -j ACCEPT 2&gt;/dev/null || \\
+      iptables -I INPUT -p udp --dport "\${port}" -j ACCEPT
+  done
+  print_ok "iptables: 500/4500/1701 udp dibuka"
+fi
+
+# RADIUS dari L2TP pool
+for port in 1812 1813 3799; do
+  iptables -C INPUT -s "\${L2TP_SUBNET}" -p udp --dport "\${port}" -j ACCEPT 2&gt;/dev/null || \\
+    iptables -I INPUT -s "\${L2TP_SUBNET}" -p udp --dport "\${port}" -j ACCEPT
+done
+print_ok "RADIUS ports terbuka dari L2TP subnet"
+
+# ── [5] Enable + start services ───────────────────────────────────────────
+print_info "[5/6] Aktifkan dan start services..."
+
+systemctl enable strongswan-starter 2&gt;/dev/null || systemctl enable ipsec 2&gt;/dev/null || true
+systemctl enable xl2tpd 2&gt;/dev/null || true
+
+# Restart strongSwan
+if systemctl is-active --quiet strongswan-starter 2&gt;/dev/null; then
+  systemctl restart strongswan-starter
+elif systemctl is-active --quiet ipsec 2&gt;/dev/null; then
+  systemctl restart ipsec
+else
+  systemctl start strongswan-starter 2&gt;/dev/null || systemctl start ipsec 2&gt;/dev/null || true
+fi
+
+# Restart xl2tpd
+if systemctl is-active --quiet xl2tpd; then
+  systemctl restart xl2tpd
+else
+  systemctl start xl2tpd
+fi
+
+sleep 1
+if systemctl is-active --quiet xl2tpd; then
+  print_ok "xl2tpd running"
+else
+  print_warn "xl2tpd mungkin tidak jalan — cek: systemctl status xl2tpd"
+fi
+
+# ── [6] Simpan server info ─────────────────────────────────────────────────
+print_info "[6/6] Simpan server info..."
+
+cat &gt; "\${INFO_FILE}" &lt;&lt; JSONEOF
+{
+  "type": "l2tp-ipsec",
+  "localIp": "\${L2TP_LOCAL_IP}",
+  "subnet": "\${L2TP_SUBNET}",
+  "poolStart": "\${L2TP_POOL_START}",
+  "poolEnd": "\${L2TP_POOL_END}",
+  "ipsecPsk": "\text{L2TP_PSK}",
+  "publicIp": "\${PUBLIC_IP}",
+  "installedAt": "\$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+}
+JSONEOF
+chmod 640 "\${INFO_FILE}"
+
+# ── Helper script: tambah/hapus NAS credentials ────────────────────────────
+# Dipanggil oleh salfanet-radius app via shell exec untuk manage NAS peers
+cat &gt; /usr/local/bin/salfanet-l2tp-peer &lt;&lt; 'PEEREOF'
+#!/bin/bash
+# Usage:
+#   salfanet-l2tp-peer add <username> <password> <vpn_ip>
+#   salfanet-l2tp-peer remove <username>
+#   salfanet-l2tp-peer list
+
+set -euo pipefail
+CMD="\${1:-list}"
+CHAP_FILE="/etc/ppp/chap-secrets"
+
+case "\${CMD}" in
+  add)
+    USER="\$2"; PASS="\$3"; VPN_IP="\${4:-*}"
+    CHAP_TMP=\$(mktemp)
+    # Hapus entry lama dengan username yang sama dulu
+    grep -v "^\x22\${USER}\x22" "\${CHAP_FILE}" &gt; "\${CHAP_TMP}" 2&gt;/dev/null || true
+    mv "\${CHAP_TMP}" "\${CHAP_FILE}" 2&gt;/dev/null || true
+    # Tambah baru
+    echo "\x22\${USER}\x22 * \x22\${PASS}\x22 \${VPN_IP}" &gt;&gt; "\${CHAP_FILE}"
+    chmod 600 "\${CHAP_FILE}"
+    # Restart xl2tpd agar baca chap-secrets baru
+    systemctl reload xl2tpd 2&gt;/dev/null || systemctl restart xl2tpd 2&gt;/dev/null || true
+    echo "OK: peer \${USER} ditambahkan"
+    ;;
+  remove)
+    USER="\$2"
+    CHAP_TMP=\$(mktemp)
+    grep -v "^\x22\${USER}\x22" "\${CHAP_FILE}" &gt; "\${CHAP_TMP}" 2&gt;/dev/null || true
+    mv "\${CHAP_TMP}" "\${CHAP_FILE}" 2&gt;/dev/null || true
+    chmod 600 "\${CHAP_FILE}"
+    systemctl reload xl2tpd 2&gt;/dev/null || true
+    echo "OK: peer \${USER} dihapus"
+    ;;
+  list)
+    echo "=== L2TP NAS Peers ==="
+    cat "\${CHAP_FILE}" 2&gt;/dev/null || echo "(kosong)"
+    ;;
+  *) echo "Usage: \$0 add|remove|list"; exit 1 ;;
+esac
+PEEREOF
+chmod +x /usr/local/bin/salfanet-l2tp-peer
+print_ok "Helper /usr/local/bin/salfanet-l2tp-peer dibuat"
+<button class="copy-btn" type="button" onclick="copyToClipboard('code-installer-script')"><i class="bi bi-clipboard"></i> Salin</button></div>
+            </div>
+
+            <!-- WireGuard Installer Section -->
+            <div id="wg-installer-section" style="display:none;">
+              <p style="font-size:13px; color:var(--text); margin-bottom:12px;">
+                Jalankan perintah berikut di terminal VPS Ubuntu/Debian Anda sebagai <strong>root</strong> untuk menginstal dan mengonfigurasi <strong>WireGuard VPN Server</strong> secara otomatis:
+              </p>
+              <div class="code-box" id="code-installer-wg-script" style="max-height:350px; overflow-y:auto; margin-top:8px;"># ============================================================================
+# SALFANET RADIUS — WireGuard VPN Server Installer
+# ============================================================================
+# Mengkonfigurasi VPS sebagai WireGuard VPN SERVER sehingga NAS/router
+# (MikroTik) bisa terhubung langsung ke VPS tanpa perlu CHR forwarder.
+#
+# Arsitektur:
+#   NAS (MikroTik) &lt;─ WireGuard client ─&gt; VPS (wg0) &lt;─ FreeRADIUS
+#
+# Keuntungan vs L2TP-via-CHR:
+#   - Tidak perlu MikroTik CHR sebagai forwarder
+#   - Setiap NAS punya VPN IP unik ─&gt; FreeRADIUS auth per-NAS tanpa masquerade
+#   - WireGuard: overhead minimal, koneksi stabil, kernel-native di Ubuntu 20+
+#   - Peer management: tambah/hapus NAS tanpa restart tunnel (wg syncconf)
+#
+# Dipanggil oleh: vps-installer.sh (Step opsional) atau manual
+# Juga dipanggil oleh salfanet-radius app saat klik &quot;Setup WireGuard&quot; di UI
+#
+# Usage:
+#   bash install-wg-server.sh [--subnet 10.200.0.0/24] [--port 51820]
+#   Variabel lingkungan:
+#     WG_SUBNET   — subnet WireGuard (default: 10.200.0.0/24)
+#     WG_PORT     — UDP port listen (default: 51820)
+#     WG_IFACE    — nama interface (default: wg0)
+# ============================================================================
+
+set -euo pipefail
+
+# ── Nilai default ──────────────────────────────────────────────────────────
+WG_IFACE=&quot;\${WG_IFACE:-wg0}&quot;
+WG_PORT=&quot;\${WG_PORT:-51820}&quot;
+WG_SUBNET=&quot;\${WG_SUBNET:-10.200.0.0/24}&quot;
+WG_CONF=&quot;/etc/wireguard/\${WG_IFACE}.conf&quot;
+WG_KEYS_DIR=&quot;/etc/wireguard/keys&quot;
+SERVER_PUBKEY_FILE=&quot;\${WG_KEYS_DIR}/server.pub&quot;
+SERVER_PRIVKEY_FILE=&quot;\${WG_KEYS_DIR}/server.priv&quot;
+INFO_FILE=&quot;/etc/wireguard/wg-server-info.json&quot;
+
+# Parse CLI args
+while [[ \$# -gt 0 ]]; do
+  case \$1 in
+    --subnet) WG_SUBNET=&quot;\$2&quot;; shift 2 ;;
+    --port)   WG_PORT=&quot;\$2&quot;;   shift 2 ;;
+    --iface)  WG_IFACE=&quot;\$2&quot;;  shift 2 ;;
+    *) shift ;;
+  esac
+done
+
+# ── Helper functions ───────────────────────────────────────────────────────
+print_header() { echo &quot;&quot;; echo &quot;╔══════════════════════════════════════════╗&quot;; echo &quot;║  WireGuard VPN Server — SALFANET RADIUS  ║&quot;; echo &quot;╚══════════════════════════════════════════╝&quot;; echo &quot;&quot;; }
+print_info()    { echo &quot;[INFO]  \$*&quot;; }
+print_ok()      { echo &quot;[OK]    \$*&quot;; }
+print_warn()    { echo &quot;[WARN]  \$*&quot;; }
+print_error()   { echo &quot;[ERROR] \$*&quot; &gt;&amp;2; }
+
+# Derive VPS gateway IP dari subnet (x.x.x.1)
+derive_gateway() {
+  local subnet=&quot;\$1&quot;
+  local base=&quot;\${subnet%/*}&quot;
+  echo &quot;\$(echo &quot;\$base&quot; | cut -d. -f1-3).1&quot;
+}
+
+# ── Root check ─────────────────────────────────────────────────────────────
+if [[ \$EUID -ne 0 ]]; then
+  print_error &quot;Harus dijalankan sebagai root&quot;
+  exit 1
+fi
+
+print_header
+
+# ── [1] Install WireGuard ──────────────────────────────────────────────────
+print_info &quot;[1/7] Install wireguard...&quot;
+apt-get update -qq
+DEBIAN_FRONTEND=noninteractive apt-get install -y wireguard wireguard-tools iproute2 iptables 2&gt;&amp;1 | \\
+  grep -E 'install|already|upgrade' || true
+
+if ! command -v wg &gt;/dev/null; then
+  print_error &quot;wg command tidak ditemukan. Periksa koneksi internet dan repo Ubuntu.&quot;
+  exit 1
+fi
+print_ok &quot;WireGuard: \$(wg --version)&quot;
+
+# ── [2] Generate server keypair (idempotent) ───────────────────────────────
+print_info &quot;[2/7] Generate server keypair...&quot;
+mkdir -p &quot;\${WG_KEYS_DIR}&quot;
+chmod 700 &quot;\${WG_KEYS_DIR}&quot;
+
+if [[ ! -f &quot;\${SERVER_PRIVKEY_FILE}&quot; ]]; then
+  wg genkey | tee &quot;\${SERVER_PRIVKEY_FILE}&quot; | wg pubkey &gt; &quot;\${SERVER_PUBKEY_FILE}&quot;
+  chmod 600 &quot;\${SERVER_PRIVKEY_FILE}&quot;
+  print_ok &quot;Keypair baru dibuat&quot;
+else
+  # Pastikan pubkey sinkron dengan privkey
+  wg pubkey &lt; &quot;\${SERVER_PRIVKEY_FILE}&quot; &gt; &quot;\${SERVER_PUBKEY_FILE}&quot;
+  print_ok &quot;Keypair sudah ada (digunakan kembali)&quot;
+fi
+
+SERVER_PRIVKEY=&quot;\$(cat &quot;\${SERVER_PRIVKEY_FILE}&quot;)&quot;
+SERVER_PUBKEY=&quot;\$(cat &quot;\${SERVER_PUBKEY_FILE}&quot;)&quot;
+VPS_GW=&quot;\$(derive_gateway &quot;\${WG_SUBNET}&quot;)&quot;
+
+print_ok &quot;Public key: \${SERVER_PUBKEY}&quot;
+print_ok &quot;VPS gateway IP: \${VPS_GW}/\${WG_SUBNET#*/}&quot;
+
+# ── [3] Buat wg0.conf (skip jika sudah ada dan running) ───────────────────
+print_info &quot;[3/7] Buat \${WG_CONF}...&quot;
+
+# Cek apakah interface sudah aktif
+WG_RUNNING=false
+if ip link show &quot;\${WG_IFACE}&quot; &gt;/dev/null 2&gt;&amp;1; then
+  WG_RUNNING=true
+  print_warn &quot;\${WG_IFACE} sudah aktif — akan reload peers saja&quot;
+fi
+
+if [[ ! -f &quot;\${WG_CONF}&quot; ]]; then
+  # Buat config baru
+  cat &gt; &quot;\${WG_CONF}&quot; &lt;&lt; WGEOF
+# WireGuard VPN Server — SALFANET RADIUS
+# Auto-generated oleh install-wg-server.sh
+# Peers dikelola oleh salfanet-radius app via /api/network/vps-wg-peer
+# JANGAN edit [Interface] section secara manual
+
+[Interface]
+Address = \${VPS_GW}/\${WG_SUBNET#*/}
+ListenPort = \${WG_PORT}
+PrivateKey = \${SERVER_PRIVKEY}
+
+# PostUp/PostDown: iptables untuk forward RADIUS dari NAS ke loopback
+PostUp = iptables -I INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT; iptables -I INPUT -i \${WG_IFACE} -p icmp -j ACCEPT; iptables -I INPUT -p udp --dport \${WG_PORT} -j ACCEPT; iptables -I FORWARD -i \${WG_IFACE} -j ACCEPT; iptables -I FORWARD -o \${WG_IFACE} -j ACCEPT
+PostDown = iptables -D INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT; iptables -D INPUT -i \${WG_IFACE} -p icmp -j ACCEPT; iptables -D INPUT -p udp --dport \${WG_PORT} -j ACCEPT; iptables -D FORWARD -i \${WG_IFACE} -j ACCEPT; iptables -D FORWARD -o \${WG_IFACE} -j ACCEPT
+
+# ── NAS Peers ──────────────────────────────────────────────────────────────
+# Peers di bawah ini dikelola otomatis oleh salfanet-radius.
+# Setiap NAS/router yang terhubung via WireGuard akan punya blok [Peer] sendiri.
+# Tambah/hapus peer via admin panel → Network → VPN Clients (type: wireguard)
+# atau via API: POST /api/network/vps-wg-peer
+WGEOF
+  chmod 640 &quot;\${WG_CONF}&quot;
+  print_ok &quot;\${WG_CONF} dibuat&quot;
+else
+  # Config sudah ada — update listen port dan PrivateKey saja di [Interface] section
+  # (Peers tetap dipertahankan)
+  print_ok &quot;\${WG_CONF} sudah ada — Interface section dipertahankan&quot;
+fi
+
+# ── [4] Aktifkan IP forwarding ─────────────────────────────────────────────
+print_info &quot;[4/7] Aktifkan IP forwarding...&quot;
+sysctl -w net.ipv4.ip_forward=1 &gt; /dev/null
+
+# Persist di /etc/sysctl.d/
+SYSCTL_FILE=&quot;/etc/sysctl.d/99-wg-forward.conf&quot;
+if [[ ! -f &quot;\${SYSCTL_FILE}&quot; ]]; then
+  echo &quot;net.ipv4.ip_forward = 1&quot; &gt; &quot;\${SYSCTL_FILE}&quot;
+fi
+print_ok &quot;IP forwarding aktif&quot;
+
+# ── [5] UFW / iptables rules ───────────────────────────────────────────────
+print_info &quot;[5/7] Buka UDP port \text{WG_PORT} di firewall...&quot;
+
+if command -v ufw &gt;/dev/null &amp;&amp; ufw status | grep -q &quot;Status: active&quot;; then
+  ufw allow &quot;\text{WG_PORT}/udp&quot; comment &quot;WireGuard VPN Server&quot; &gt; /dev/null 2&gt;&amp;1 || true
+  print_ok &quot;UFW rule ditambahkan: \text{WG_PORT}/udp&quot;
+else
+  iptables -C INPUT -p udp --dport &quot;\${WG_PORT}&quot; -j ACCEPT 2&gt;/dev/null || \\
+    iptables -I INPUT -p udp --dport &quot;\${WG_PORT}&quot; -j ACCEPT
+  print_ok &quot;iptables rule ditambahkan: \${WG_PORT}/udp&quot;
+fi
+
+# Also open RADIUS ports from WG subnet
+iptables -C INPUT -s &quot;\text{WG_SUBNET}&quot; -p udp --dport 1812 -j ACCEPT 2&gt;/dev/null || \\
+  iptables -I INPUT -s &quot;\text{WG_SUBNET}&quot; -p udp --dport 1812 -j ACCEPT
+iptables -C INPUT -s &quot;\text{WG_SUBNET}&quot; -p udp --dport 1813 -j ACCEPT 2&gt;/dev/null || \\
+  iptables -I INPUT -s &quot;\text{WG_SUBNET}&quot; -p udp --dport 1813 -j ACCEPT
+iptables -C INPUT -s &quot;\text{WG_SUBNET}&quot; -p udp --dport 3799 -j ACCEPT 2&gt;/dev/null || \\
+  iptables -I INPUT -s &quot;\text{WG_SUBNET}&quot; -p udp --dport 3799 -j ACCEPT
+print_ok &quot;RADIUS ports (1812/1813/3799) terbuka dari WG subnet&quot;
+
+# ── [6] Start / reload WireGuard ──────────────────────────────────────────
+print_info &quot;[6/7] Start / reload WireGuard...&quot;
+systemctl enable &quot;wg-quick@\${WG_IFACE}&quot; &gt;/dev/null 2&gt;&amp;1 || true
+
+if \${WG_RUNNING}; then
+  # Interface sudah aktif — reload config tanpa disconnect klien
+  wg syncconf &quot;\${WG_IFACE}&quot; &lt;(wg-quick strip &quot;\${WG_IFACE}&quot;) 2&gt;/dev/null || \\
+    systemctl reload &quot;wg-quick@\${WG_IFACE}&quot; 2&gt;/dev/null || \\
+    wg-quick down &quot;\${WG_IFACE}&quot; &amp;&amp; wg-quick up &quot;\${WG_IFACE}&quot;
+  print_ok &quot;\${WG_IFACE} di-reload (koneksi aktif tidak terputus)&quot;
+else
+  systemctl start &quot;wg-quick@\${WG_IFACE}&quot; 2&gt;/dev/null || wg-quick up &quot;\${WG_IFACE}&quot;
+  print_ok &quot;\${WG_IFACE} dimulai&quot;
+fi
+
+# Tunggu sebentar lalu cek
+sleep 1
+if ip link show &quot;\${WG_IFACE}&quot; 2&gt;/dev/null | grep -q &quot;UP&quot;; then
+  print_ok &quot;\${WG_IFACE} UP — \$(ip addr show &quot;\${WG_IFACE}&quot; | grep &quot;inet &quot; | awk '{print \$2}')&quot;
+else
+  print_warn &quot;\${WG_IFACE} mungkin belum UP — cek: systemctl status wg-quick@\text{WG_IFACE}&quot;
+fi
+
+# ── [7] Simpan info server ke JSON (dibaca app) ────────────────────────────
+print_info &quot;[7/7] Simpan server info ke \text{INFO_FILE}...&quot;
+
+PUBLIC_IP=&quot;&quot;
+PUBLIC_IP=\$(curl -4 -s --connect-timeout 5 ifconfig.me 2&gt;/dev/null || \\
+            curl -4 -s --connect-timeout 5 api.ipify.org 2>/dev/null || \\
+            hostname -I 2&gt;/dev/null | awk '{print \$1}' || echo &quot;unknown&quot;)
+
+cat &gt; &quot;\${INFO_FILE}&quot; &lt;&lt; JSONEOF
+{
+  &quot;interface&quot;: &quot;\${WG_IFACE}&quot;,
+  &quot;listenPort&quot;: \${WG_PORT},
+  &quot;subnet&quot;: &quot;\${WG_SUBNET}&quot;,
+  &quot;gatewayIp&quot;: &quot;\${VPS_GW}&quot;,
+  &quot;publicIp&quot;: &quot;\${PUBLIC_IP}&quot;,
+  &quot;publicKey&quot;: &quot;\${SERVER_PUBKEY}&quot;,
+  &quot;privateKeyFile&quot;: &quot;\${SERVER_PRIVKEY_FILE}&quot;,
+  &quot;configFile&quot;: &quot;\${WG_CONF}&quot;,
+  &quot;installedAt&quot;: &quot;\$(date -u +%Y-%m-%dT%H:%M:%SZ)&quot;
+}
+JSONEOF
+chmod 640 &quot;\${INFO_FILE}&quot;
+print_ok &quot;Info disimpan ke \${INFO_FILE}&quot;
+
+# ── Summary ────────────────────────────────────────────────────────────────
+echo &quot;&quot;
+echo &quot;╔══════════════════════════════════════════════════════════╗&quot;
+echo &quot;║          WireGuard Server INSTALLED ✅                    ║&quot;
+echo &quot;╠══════════════════════════════════════════════════════════╣&quot;
+printf &quot;║  Public IP     : %-39s ║\\n&quot; &quot;\${PUBLIC_IP}&quot;
+printf &quot;║  Interface     : %-39s ║\\n&quot; &quot;\${WG_IFACE}&quot;
+printf &quot;║  Listen Port   : %-39s ║\\n&quot; &quot;\${WG_PORT}/udp&quot;
+printf &quot;║  Subnet        : %-39s ║\\n&quot; &quot;\${WG_SUBNET}&quot;
+printf &quot;║  VPS Gateway   : %-39s ║\\n&quot; &quot;\${VPS_GW}&quot;
+printf &quot;║  Server Pubkey : %-39s ║\\n&quot; &quot;\${SERVER_PUBKEY:0:36}...&quot;
+echo &quot;╠══════════════════════════════════════════════════════════╣&quot;
+echo &quot;║  Langkah selanjutnya di admin panel:                     ║&quot;
+echo &quot;║  Network → VPN Server → klik ikon WG → Setup WireGuard  ║&quot;
+echo &quot;║  Lalu tambah NAS via Network → VPN Clients (type: wg)   ║&quot;
+echo &quot;╚══════════════════════════════════════════════════════════╝&quot;
+echo &quot;&quot;<button class="copy-btn" type="button" onclick="copyToClipboard('code-installer-wg-script')"><i class="bi bi-clipboard"></i> Salin</button></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="instruction-card">
+          <div class="instruction-icon"><i class="bi bi-info-circle"></i></div>
+          <div>
+            <h3 style="margin:0 0 4px 0; font-size:15px; color:var(--text);">Cara Pakai VPN</h3>
+            <div class="instruction-steps">
+              <div class="step-item"><span class="step-badge">1</span> Buat VPN Client → dapatkan IP VPN & script MikroTik</div>
+              <div class="step-item"><span class="step-badge">2</span> Paste script ke MikroTik → terhubung ke VPN</div>
+              <div class="step-item"><span class="step-badge">3</span> Saat Tambah Device, gunakan IP VPN sebagai IP Address</div>
+            </div>
+          </div>
+        </div>
+
+        <% if (!clients || clients.length === 0) { %>
+          <div class="empty-state">
+            <div class="empty-icon"><i class="bi bi-shield-check"></i></div>
+            <h2 style="margin:0 0 8px 0; color:var(--text); font-size:18px;">Belum ada VPN Client</h2>
+            <p style="color:var(--muted); font-size:14px; margin-bottom:24px;">Buat VPN Client untuk mendapatkan koneksi aman antara server dan MikroTik Anda.</p>
+            <button class="btn btn-p" onclick="openCreateModal()">
+              <i class="bi bi-plus-lg"></i> Buat VPN Client
+            </button>
+          </div>
+        <% } else { %>
+          <div class="table-responsive" style="background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 24px;">
+            <table class="table" style="width: 100%; border-collapse: collapse; text-align: left; margin: 0;">
+              <thead>
+                <tr style="background: var(--bg3); border-bottom: 1px solid var(--border); color: var(--muted); font-size: 13px; font-weight: 600;">
+                  <th style="padding: 16px 20px;">Nama / Cabang</th>
+                  <th style="padding: 16px 20px;">Tipe</th>
+                  <th style="padding: 16px 20px;">IP VPN (Allowed IP)</th>
+                  <th style="padding: 16px 20px;">IP VPS Gateway</th>
+                  <th style="padding: 16px 20px;">Detail Auth / Keys</th>
+                  <th style="padding: 16px 20px; text-align: right;">Aksi</th>
+                </tr>
+              </thead>
+              <tbody style="font-size: 14px; color: var(--text);">
+                <% clients.forEach(c => { %>
+                  <tr style="border-bottom: 1px solid var(--border); transition: background-color 0.2s;">
+                    <td style="padding: 16px 20px; font-weight: 600; color: var(--text);">
+                      <%= c.name %>
+                    </td>
+                    <td style="padding: 16px 20px;">
+                      <span class="badge" style="background: <%= c.vpn_type === 'L2TP' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(59, 130, 246, 0.15)' %>; color: <%= c.vpn_type === 'L2TP' ? '#10b981' : '#3b82f6' %>; font-size: 11px; padding: 4px 10px; border-radius: 6px; font-weight: 600;">
+                        <%= c.vpn_type %>
+                      </span>
+                    </td>
+                    <td style="padding: 16px 20px;">
+                      <code style="font-size: 13px; background: rgba(59, 130, 246, 0.1); color: var(--primary); padding: 2px 6px; border-radius: 4px;"><%= c.mt_ip %></code>
+                    </td>
+                    <td style="padding: 16px 20px;">
+                      <code style="font-size: 13px; background: var(--bg3); color: var(--muted); padding: 2px 6px; border-radius: 4px;"><%= c.vps_ip %></code>
+                    </td>
+                    <td style="padding: 16px 20px; font-size: 13px;">
+                      <% if (c.vpn_type === 'L2TP') { %>
+                        <div style="display: flex; flex-direction: column; gap: 2px;">
+                          <span><span style="color:var(--muted)">User:</span> <code><%= c.mt_private_key %></code></span>
+                          <span><span style="color:var(--muted)">PSK:</span> <code><%= c.vps_public_key %></code></span>
+                        </div>
+                      <% } else { %>
+                        <div style="display: flex; flex-direction: column; gap: 2px;">
+                          <span style="display: inline-block; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="<%= c.mt_public_key %>">
+                            <span style="color:var(--muted)">Peer PubKey:</span> <code><%= c.mt_public_key ? c.mt_public_key : '(Auto)' %></code>
+                          </span>
+                          <span><span style="color:var(--muted)">Listen Port:</span> <code><%= c.vps_port %></code></span>
+                        </div>
+                      <% } %>
+                    </td>
+                    <td style="padding: 16px 20px; text-align: right;">
+                      <div style="display: inline-flex; gap: 8px;">
+                        <button class="btn btn-g btn-sm" style="padding: 6px 12px; font-size: 12px;" onclick="showScriptModal('<%= c.id %>')">
+                          <i class="bi bi-code-slash"></i> Lihat Script
+                        </button>
+                        <form action="/admin/vpn-clients/delete/<%= c.id %>" method="POST" onsubmit="return confirm('Hapus VPN Client ini?');" style="margin:0; display: inline;">
+                          <button type="submit" class="btn btn-d btn-sm" style="padding: 6px 10px; font-size: 12px;">
+                            <i class="bi bi-trash"></i>
+                          </button>
+                        </form>
+                      </div>
+                    </td>
+                  </tr>
+
+                  <!-- Script Modal for this client -->
+                  <div id="scriptModal-<%= c.id %>" class="modal">
+                    <div class="modal-content" style="max-width:700px; text-align: left;">
+                      <div class="modal-header">
+                        <h2>Script MikroTik - <%= c.name %> (<%= c.vpn_type %>)</h2>
+                        <button class="close-btn" onclick="closeScriptModal('<%= c.id %>')">&times;</button>
+                      </div>
+                      <div class="modal-body">
+                        <% if (c.vpn_type === 'L2TP') { %>
+                          <p class="text-muted fs12 mb12">Langkah 1: Tambahkan peer di file CHAP secrets VPS Anda (Sudah otomatis ditambahkan jika berjalan di VPS)</p>
+                          <div class="code-box" id="code-vps-<%= c.id %>"># Tambahkan baris ini ke /etc/ppp/chap-secrets di VPS Anda:
+"<%= c.mt_private_key %>" * "<%= c.vps_private_key %>" <%= c.mt_ip.split('/')[0] %>
+<button class="copy-btn" type="button" onclick="copyToClipboard('code-vps-<%= c.id %>')"><i class="bi bi-clipboard"></i> Salin</button></div>
+
+                          <p class="text-muted fs12 mb12 mt24">Langkah 2: Copy-paste script berikut di terminal MikroTik RouterOS (v6 atau v7)</p>
+                          <div class="code-box" id="code-mt-<%= c.id %>"># =======================================================
+# RouterOS L2TP/IPSec Client Auto-Configuration Script
+# Client: <%= c.name %>
+# =======================================================
+/interface l2tp-client
+add connect-to=<%= vpsEndpointIp || c.vps_endpoint_ip || "VPS_IP_PUBLIK" %> disabled=no name=l2tp-<%= c.mt_private_key %> \
+    password="<%= c.vps_private_key %>" use-ipsec=yes ipsec-secret="<%= c.vps_public_key %>" \
+    user="<%= c.mt_private_key %>"
+
+/ip address
+add address=<%= c.mt_ip %> interface=l2tp-<%= c.mt_private_key %> comment="IP VPN L2TP Client"
+
+# Tes konektivitas ke VPS Gateway
+/ping <%= c.vps_ip.split('/')[0] %> count=3
+<button class="copy-btn" type="button" onclick="copyToClipboard('code-mt-<%= c.id %>')"><i class="bi bi-clipboard"></i> Salin</button></div>
+
+                        <% } else { %>
+                          <p class="text-muted fs12 mb12">Langkah 1: Konfigurasi WireGuard di VPS Anda (Tambahkan di peer server)</p>
+                          <div class="code-box" id="code-vps-<%= c.id %>">[Peer]
+# <%= c.name %>
+PublicKey = <%= c.mt_public_key %>
+AllowedIPs = <%= c.mt_ip.split('/')[0] %>/32
+<button class="copy-btn" type="button" onclick="copyToClipboard('code-vps-<%= c.id %>')"><i class="bi bi-clipboard"></i> Salin</button></div>
+
+                          <p class="text-muted fs12 mb12 mt24">Langkah 2: Copy-paste script berikut di terminal MikroTik RouterOS v7</p>
+                          <div class="code-box" id="code-mt-<%= c.id %>"># =======================================================
+# RouterOS v7 WireGuard Auto-Configuration Script
+# Client: <%= c.name %>
+# =======================================================
+/interface wireguard
+add listen-port=<%= c.vps_port %> name=wireguard1 private-key="<%= c.mt_private_key %>"
+
+/interface wireguard peers
+add allowed-address=<%= c.vps_ip.split('/')[0] %>/32 comment="Koneksi VPN ke Server" \
+    endpoint-address=<%= vpsEndpointIp || c.vps_endpoint_ip || "VPS_IP_PUBLIK" %> endpoint-port=<%= c.vps_port %> \
+    interface=wireguard1 persistent-keepalive=<%= c.keepalive %>s \
+    public-key="<%= c.vps_public_key %>"
+
+/ip address
+add address=<%= c.mt_ip %> interface=wireguard1 comment="IP VPN Client"
+
+# Tes konektivitas ke VPS
+/ping <%= c.vps_ip.split('/')[0] %> count=3
+<button class="copy-btn" type="button" onclick="copyToClipboard('code-mt-<%= c.id %>')"><i class="bi bi-clipboard"></i> Salin</button></div>
+                        <% } %>
+                      </div>
+                      <div class="modal-footer">
+                        <button class="btn btn-g" onclick="closeScriptModal('<%= c.id %>')">Tutup</button>
+                      </div>
+                    </div>
+                  </div>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        <% } %>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Create VPN Client Modal -->
+  <div id="createModal" class="modal">
+    <div class="modal-content" style="max-width:550px;">
+      <div class="modal-header">
+        <h2>Buat VPN Client Baru</h2>
+        <button class="close-btn" onclick="closeCreateModal()">&times;</button>
+      </div>
+      <form action="/admin/vpn-clients/create" method="POST">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Nama Client / Cabang</label>
+            <input type="text" class="form-control" name="name" id="client_name" required placeholder="Contoh: Router Pusat" oninput="suggestL2tpFields()">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Tipe VPN</label>
+            <select class="form-control" name="vpn_type" id="vpn_type" onchange="toggleVpnFields()">
+              <option value="WireGuard" selected>WireGuard (v7 Only)</option>
+              <option value="L2TP">L2TP / IPsec (v6 & v7)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">IP Address VPS Gateway (CIDR)</label>
+            <input type="text" class="form-control" name="vps_ip" id="vps_ip" required placeholder="10.8.0.1/24" value="10.8.0.1/24">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Allowed IP (IP Client/MikroTik) (CIDR)</label>
+            <input type="text" class="form-control" name="mt_ip" id="mt_ip" required placeholder="10.8.0.2/24" value="10.8.0.2/24">
+          </div>
+
+          <!-- WireGuard Fields -->
+          <div id="wg-fields">
+            <div class="form-group" style="margin-bottom:12px;">
+              <label class="form-label">Port WireGuard VPS</label>
+              <input type="number" class="form-control" name="vps_port" id="vps_port" value="51820">
+            </div>
+
+            <div style="background:var(--bg3); border:1px solid var(--border); border-radius:10px; padding:12px; margin-top:12px; margin-bottom:12px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <span style="font-size:13px; font-weight:600; color:var(--text);"><i class="bi bi-key-fill text-warning"></i> WireGuard Keys</span>
+                <button type="button" class="btn btn-g btn-xs" onclick="generateWgKeypairs()" style="font-size:11px; padding:4px 8px; border-radius:4px; border:1px solid var(--border);">
+                  <i class="bi bi-arrow-repeat"></i> Generate Keys
+                </button>
+              </div>
+
+              <div style="margin-bottom:8px;">
+                <label style="font-size:11px; color:var(--muted); display:block; margin-bottom:4px;">VPS/Server Private Key</label>
+                <input type="text" class="form-control" name="vps_private_key" id="vps_private_key" style="font-family:monospace; font-size:12px;" placeholder="Auto-generate jika dikosongkan">
+              </div>
+              <div style="margin-bottom:8px;">
+                <label style="font-size:11px; color:var(--muted); display:block; margin-bottom:4px;">VPS/Server Public Key</label>
+                <input type="text" class="form-control" name="vps_public_key" id="vps_public_key" style="font-family:monospace; font-size:12px;" placeholder="Auto-generate jika dikosongkan">
+              </div>
+              <div style="margin-bottom:8px;">
+                <label style="font-size:11px; color:var(--muted); display:block; margin-bottom:4px;">Client/MikroTik Private Key</label>
+                <input type="text" class="form-control" name="mt_private_key" id="mt_private_key" style="font-family:monospace; font-size:12px;" placeholder="Auto-generate jika dikosongkan">
+              </div>
+              <div style="margin-bottom:0;">
+                <label style="font-size:11px; color:var(--muted); display:block; margin-bottom:4px;">Client/MikroTik Public Key</label>
+                <input type="text" class="form-control" name="mt_public_key" id="mt_public_key" style="font-family:monospace; font-size:12px;" placeholder="Auto-generate jika dikosongkan">
+              </div>
+            </div>
+          </div>
+
+          <!-- L2TP Fields -->
+          <div id="l2tp-fields" style="display:none;">
+            <div class="form-group">
+              <label class="form-label">L2TP Username</label>
+              <input type="text" class="form-control" name="l2tp_username" id="l2tp_username" placeholder="Auto-generated dari nama">
+            </div>
+            <div class="form-group">
+              <label class="form-label">L2TP Password</label>
+              <input type="text" class="form-control" name="l2tp_password" id="l2tp_password" placeholder="Kosongkan untuk acak">
+            </div>
+            <div class="form-group">
+              <label class="form-label">IPsec Pre-Shared Key (PSK)</label>
+              <input type="text" class="form-control" name="ipsec_psk" value="salfanet-psk">
+            </div>
+          </div>
+
+          <div class="form-group" style="display:none;">
+            <!-- Optionally hide or show keys / endpoint IP -->
+            <label class="form-label">IP Publik / Domain VPS (Endpoint)</label>
+            <input type="text" class="form-control" name="vps_endpoint_ip" value="<%= vpsEndpointIp %>">
+          </div>
+          <p class="text-muted fs12 mt12" id="fields-info">Kunci Private & Public (WireGuard) akan digenerate otomatis secara acak oleh sistem jika kosong.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-g" onclick="closeCreateModal()">Batal</button>
+          <button type="submit" class="btn btn-p">Buat Client</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    async function generateWgKeypairs() {
+      try {
+        const btn = document.querySelector('[onclick="generateWgKeypairs()"]');
+        const origText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Generating...';
+
+        const res = await fetch('/admin/vpn-clients/generate-wg-keys');
+        const data = await res.json();
+
+        if (data.server && data.client) {
+          document.getElementById('vps_private_key').value = data.server.privateKey;
+          document.getElementById('vps_public_key').value = data.server.publicKey;
+          document.getElementById('mt_private_key').value = data.client.privateKey;
+          document.getElementById('mt_public_key').value = data.client.publicKey;
+        } else {
+          alert('Gagal generate keys.');
+        }
+
+        btn.disabled = false;
+        btn.innerHTML = origText;
+      } catch (err) {
+        console.error(err);
+        alert('Terjadi kesalahan saat generate keys.');
+      }
+    }
+
+    function openCreateModal() { document.getElementById('createModal').style.display = 'flex'; }
+    function closeCreateModal() { document.getElementById('createModal').style.display = 'none'; }
+    
+    function showScriptModal(id) { document.getElementById('scriptModal-' + id).style.display = 'flex'; }
+    function closeScriptModal(id) { document.getElementById('scriptModal-' + id).style.display = 'none'; }
+
+    function toggleInstallerCode() {
+      const el = document.getElementById('installer-code-section');
+      const icon = document.getElementById('installer-icon');
+      if (el.style.display === 'none') {
+        el.style.display = 'block';
+        icon.className = 'bi bi-chevron-up';
+      } else {
+        el.style.display = 'none';
+        icon.className = 'bi bi-chevron-down';
+      }
+    }
+
+    function toggleVpnFields() {
+      const vpnType = document.getElementById('vpn_type').value;
+      const wgFields = document.getElementById('wg-fields');
+      const l2tpFields = document.getElementById('l2tp-fields');
+      const info = document.getElementById('fields-info');
+      const vpsIp = document.getElementById('vps_ip');
+      const mtIp = document.getElementById('mt_ip');
+
+      if (vpnType === 'L2TP') {
+        wgFields.style.display = 'none';
+        l2tpFields.style.display = 'block';
+        info.innerText = 'Akun CHAP secrets & IPsec PSK akan dikonfigurasi otomatis jika dikosongkan.';
+        if (vpsIp.value === '10.8.0.1/24') {
+          vpsIp.value = '10.201.0.1/24';
+        }
+        if (mtIp.value === '10.8.0.2/24') {
+          mtIp.value = '10.201.0.10/24';
+        }
+      } else {
+        wgFields.style.display = 'block';
+        l2tpFields.style.display = 'none';
+        info.innerText = 'Kunci Private & Public (WireGuard) akan digenerate otomatis secara acak oleh sistem jika kosong.';
+        if (vpsIp.value === '10.201.0.1/24') {
+          vpsIp.value = '10.8.0.1/24';
+        }
+        if (mtIp.value === '10.8.0.2/24' || mtIp.value === '10.201.0.10/24') {
+          mtIp.value = '10.8.0.2/24';
+        }
+      }
+    }
+
+    function suggestL2tpFields() {
+      const name = document.getElementById('client_name').value;
+      if (name) {
+        document.getElementById('l2tp_username').placeholder = name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+      }
+    }
+
+    function switchInstallerScript(type) {
+      const l2tpSec = document.getElementById('l2tp-installer-section');
+      const wgSec = document.getElementById('wg-installer-section');
+      const btnL2tp = document.getElementById('btn-show-l2tp-script');
+      const btnWg = document.getElementById('btn-show-wg-script');
+
+      if (type === 'WireGuard') {
+        l2tpSec.style.display = 'none';
+        wgSec.style.display = 'block';
+        btnL2tp.className = 'btn btn-sm btn-g';
+        btnWg.className = 'btn btn-sm btn-p';
+      } else {
+        l2tpSec.style.display = 'block';
+        wgSec.style.display = 'none';
+        btnL2tp.className = 'btn btn-sm btn-p';
+        btnWg.className = 'btn btn-sm btn-g';
+      }
+    }
+    
+    function copyToClipboard(elementId) {
+      const el = document.getElementById(elementId);
+      // Remove button text from copy
+      const clone = el.cloneNode(true);
+      const btn = clone.querySelector('button');
+      if (btn) btn.remove();
+      
+      const text = clone.innerText || clone.textContent;
+      navigator.clipboard.writeText(text.trim()).then(() => {
+        alert('Tersalin ke clipboard!');
+      }).catch(err => {
+        alert('Gagal menyalin: ' + err);
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pendaftaran Pelanggan Baru | <%= settings.company_header %>
+  </title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="/img/logo.png">
+  <link rel="icon" href="/img/logo.png">
+  <style>
+    body {
+      background: radial-gradient(1200px 600px at 10% 0%, rgba(29, 78, 216, 0.04) 0%, rgba(248, 250, 252, 0) 60%),
+        radial-gradient(900px 450px at 100% 0%, rgba(6, 182, 212, 0.04) 0%, rgba(248, 250, 252, 0) 55%),
+        #f8fafc;
+      color: #0f172a;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .register-container {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .register-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+      overflow: hidden;
+      max-width: 500px;
+      width: 100%;
+    }
+
+    .register-header {
+      background: linear-gradient(135deg, rgba(29, 78, 216, 0.03) 0%, rgba(6, 182, 212, 0.02) 100%);
+      color: #0f172a;
+      padding: 30px 20px;
+      text-align: center;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .logo-container {
+      width: 80px;
+      height: 80px;
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 15px;
+    }
+
+    .logo-container img {
+      width: 50px;
+      height: 50px;
+      object-fit: contain;
+    }
+
+    .form-container {
+      padding: 30px 25px;
+    }
+
+    .form-label {
+      font-weight: 600;
+      color: #334155;
+      font-size: 14px;
+      margin-bottom: 5px;
+    }
+
+    .form-control,
+    .form-select {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      color: #0f172a;
+      border-radius: 12px;
+      padding: 12px 15px;
+      font-size: 15px;
+      transition: all 0.3s ease;
+      margin-bottom: 15px;
+    }
+
+    .form-control::placeholder {
+      color: #94a3b8;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+      background: #ffffff;
+      border-color: #1d4ed8;
+      box-shadow: 0 0 0 0.2rem rgba(29, 78, 216, 0.1);
+      color: #0f172a;
+    }
+
+    .form-select option {
+      background: #ffffff;
+      color: #0f172a;
+    }
+
+    .btn-register {
+      background: linear-gradient(135deg, #1d4ed8 0%, #06b6d4 100%);
+      border: none;
+      border-radius: 12px;
+      padding: 15px;
+      font-size: 16px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      margin-top: 10px;
+      color: white;
+    }
+
+    .btn-register:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 28px rgba(29, 78, 216, 0.15);
+      color: white;
+    }
+
+    .footer-text {
+      color: #64748b;
+      font-size: 13px;
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    .footer-text a {
+      color: #1d4ed8;
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    .package-price {
+      font-weight: 600;
+      color: #11998e;
+    }
+
+    #picker-map { height: 320px; width: 100%; border-radius: 12px; border: 1px solid #cbd5e1; }
+
+    .text-muted {
+      color: #64748b !important;
+    }
+
+    .btn-outline-secondary,
+    .btn-outline-info,
+    .btn-outline-success {
+      border-color: #cbd5e1;
+      color: #475569;
+    }
+
+    .btn-outline-secondary:hover,
+    .btn-outline-info:hover,
+    .btn-outline-success:hover {
+      background: #f1f5f9;
+      border-color: #94a3b8;
+      color: #0f172a;
+    }
+
+    .alert {
+      border: 1px solid #e2e8f0;
+    }
+
+    .alert-danger {
+      background: rgba(255, 107, 107, 0.08);
+      color: #ff6b6b;
+      border-color: rgba(255, 107, 107, 0.2);
+    }
+
+    .alert-success {
+      background: rgba(17, 153, 142, 0.08);
+      color: #11998e;
+      border-color: rgba(17, 153, 142, 0.2);
+    }
+
+    @media (max-width: 576px) {
+      .register-container {
+        padding: 10px;
+      }
+
+      .register-card {
+        border-radius: 15px;
+      }
+
+      .form-container {
+        padding: 25px 20px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="register-container">
+    <div class="register-card">
+      <div class="register-header">
+        <div class="logo-container">
+          <img src="/img/logo.png" alt="Logo">
+        </div>
+        <h4 class="mb-1 fw-bold">Pendaftaran Pelanggan Baru</h4>
+        <p class="mb-0 opacity-75">
+          <%= settings.company_header %>
+        </p>
+      </div>
+      <div class="form-container">
+
+        <% if (error) { %>
+          <div class="alert alert-danger text-center mb-4" style="border-radius:12px;">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            <%= error %>
+          </div>
+          <% } %>
+
+            <% if (success) { %>
+              <div class="alert alert-success text-center mb-4"
+                style="border-radius:12px; border-left: 4px solid #28a745;">
+                <i class="bi bi-check-circle-fill fs-3 d-block mb-2 text-success"></i>
+                <strong>
+                  <%= success %>
+                </strong>
+                <div class="mt-3">
+                  <a href="/customer/login" class="btn btn-sm btn-outline-success">Kembali ke Login</a>
+                </div>
+              </div>
+              <% } else { %>
+                <form method="POST" action="/customer/register">
+                  <div>
+                    <label class="form-label"><i class="bi bi-person me-1"></i>Nama Lengkap</label>
+                    <input type="text" class="form-control" name="name" placeholder="Contoh: Budi Santoso" required
+                      autofocus>
+                  </div>
+
+                  <div>
+                    <label class="form-label"><i class="bi bi-whatsapp me-1"></i>Nomor WhatsApp Aktif</label>
+                    <input type="text" class="form-control" name="phone" placeholder="Contoh: 081234567890" required>
+                  </div>
+
+                  <div>
+                    <label class="form-label"><i class="bi bi-envelope me-1"></i>Email (Opsional)</label>
+                    <input type="email" class="form-control" name="email" placeholder="Contoh: budi@gmail.com">
+                    <div style="font-size: 11px; color: #6c757d; margin-top: -10px; margin-bottom: 15px;">Email
+                      digunakan untuk pengiriman invoice otomatis.</div>
+                  </div>
+
+                  <div>
+                    <label class="form-label"><i class="bi bi-geo-alt me-1"></i>Alamat Pemasangan</label>
+                    <textarea class="form-control" name="address" rows="2" placeholder="Sertakan RT/RW, Desa, Kecamatan"
+                      required></textarea>
+                  </div>
+
+                  <div>
+                    <label class="form-label"><i class="bi bi-map me-1"></i>Lokasi di Peta (Opsional)</label>
+                    <div class="d-flex gap-2">
+                      <button type="button" class="btn btn-outline-secondary w-100" style="border-radius:12px" onclick="openPicker()">
+                        <i class="bi bi-geo-alt-fill me-1"></i>Pilih di Peta
+                      </button>
+                      <button type="button" class="btn btn-outline-info" style="border-radius:12px;white-space:nowrap" onclick="getLocation()">
+                        <i class="bi bi-crosshair me-1"></i>GPS
+                      </button>
+                    </div>
+                    <input type="hidden" name="lat" id="reg_lat">
+                    <input type="hidden" name="lng" id="reg_lng">
+                    <div class="text-muted mt-2" style="font-size: 11px;">
+                      <span id="coordText">Koordinat belum dipilih.</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label class="form-label"><i class="bi bi-box-seam me-1"></i>Pilih Paket Layanan</label>
+                    <select class="form-select" name="package_id" required>
+                      <option value="" disabled selected>Pilih salah satu paket...</option>
+                      <% packages.forEach(function(pkg) { %>
+                        <option value="<%= pkg.id %>">
+                          <%= pkg.name %> - Rp <%= pkg.price.toLocaleString('id-ID') %>/bulan
+                        </option>
+                        <% }) %>
+                    </select>
+                  </div>
+
+                  <button type="submit" class="btn btn-register w-100">
+                    <i class="bi bi-send-fill me-2"></i>Kirim Pendaftaran
+                  </button>
+                </form>
+                <% } %>
+
+                  <div class="footer-text mt-4">
+                    <p class="mb-2">Sudah punya akun? <a href="/customer/login">Login di sini</a></p>
+                    <div class="d-flex justify-content-center flex-wrap gap-3 mb-3" style="font-size: 11px;">
+                      <a href="/customer/about" class="text-decoration-none text-muted">Tentang Kami</a>
+                      <a href="/customer/tos" class="text-decoration-none text-muted">Ketentuan Layanan</a>
+                      <a href="/customer/privacy" class="text-decoration-none text-muted">Kebijakan Privasi</a>
+                      <a href="/customer/contact" class="text-decoration-none text-muted">Kontak</a>
+                    </div>
+                    <div style="font-size: 11px;">
+                      &copy; <%= new Date().getFullYear() %>
+                        <%= settings.company_header %>
+                    </div>
+                  </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="mapPickerModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content" style="border-radius: 16px; overflow:hidden; background:#ffffff; border: 1px solid #e2e8f0;">
+        <div class="modal-header border-0" style="border-bottom: 1px solid #e2e8f0; color:#0f172a;">
+          <h6 class="modal-title fw-bold"><i class="bi bi-geo-alt-fill me-2 text-primary"></i>Pilih Lokasi Pemasangan</h6>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="picker-map"></div>
+          <div class="text-muted mt-2" style="font-size: 12px;">
+            Geser pin atau klik peta untuk menentukan titik lokasi.
+          </div>
+        </div>
+        <div class="modal-footer border-0" style="border-top: 1px solid #e2e8f0;">
+          <button type="button" class="btn btn-outline-secondary" style="border-radius: 12px;" data-bs-dismiss="modal">Selesai</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const officeLat = Number('<%= settings.office_lat || "" %>') || -6.200000;
+    const officeLng = Number('<%= settings.office_lng || "" %>') || 106.816666;
+    let pickerMap, pickerMarker, pickerModal;
+
+    function setCoords(lat, lng) {
+      const latStr = Number(lat).toFixed(8);
+      const lngStr = Number(lng).toFixed(8);
+      document.getElementById('reg_lat').value = latStr;
+      document.getElementById('reg_lng').value = lngStr;
+      document.getElementById('coordText').innerText = `Lat: ${latStr} • Lng: ${lngStr}`;
+    }
+
+    function openPicker() {
+      pickerModal = pickerModal || new bootstrap.Modal(document.getElementById('mapPickerModal'));
+      pickerModal.show();
+
+      const latVal = parseFloat(document.getElementById('reg_lat').value) || officeLat;
+      const lngVal = parseFloat(document.getElementById('reg_lng').value) || officeLng;
+
+      setTimeout(() => {
+        if (!pickerMap) {
+          pickerMap = L.map('picker-map').setView([latVal, lngVal], 16);
+          L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+            maxZoom: 20,
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+          }).addTo(pickerMap);
+
+          pickerMarker = L.marker([latVal, lngVal], { draggable: true }).addTo(pickerMap);
+          pickerMarker.on('dragend', () => {
+            const p = pickerMarker.getLatLng();
+            setCoords(p.lat, p.lng);
+          });
+          pickerMap.on('click', (e) => {
+            pickerMarker.setLatLng(e.latlng);
+            setCoords(e.latlng.lat, e.latlng.lng);
+          });
+        } else {
+          pickerMap.setView([latVal, lngVal], 16);
+          pickerMarker.setLatLng([latVal, lngVal]);
+          pickerMap.invalidateSize();
+        }
+      }, 250);
+    }
+
+    function getLocation() {
+      if (!navigator.geolocation) return alert('GPS tidak didukung di perangkat ini.');
+      navigator.geolocation.getCurrentPosition((pos) => {
+        setCoords(pos.coords.latitude, pos.coords.longitude);
+      }, (err) => {
+        alert('Gagal mengambil lokasi: ' + (err.message || err));
+      }, { enableHighAccuracy: true, timeout: 8000 });
+    }
+  </script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js', { scope: '/customer/' }).catch(() => {});
+      });
+    }
+  </script>
+</body>
+
+</html>
